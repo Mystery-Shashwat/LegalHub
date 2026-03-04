@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 
 // Extend express Request to include user
 interface AuthRequest extends Request {
-    user?: { id: string; role: string; email: string };
+    user?: { userId: string; role: string; email: string };
 }
 
 export const bookingRouter = Router();
@@ -14,7 +14,7 @@ export const bookingRouter = Router();
 // 1. Get List of Bookings (Depends on Role)
 bookingRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user!.id;
+        const userId = req.user!.userId;
         const role = req.user!.role;
 
         let bookings;
@@ -65,7 +65,7 @@ bookingRouter.post("/", requireClient, async (req: AuthRequest, res: Response) =
 
         const booking = await prisma.booking.create({
             data: {
-                clientId: req.user!.id,
+                clientId: req.user!.userId,
                 lawyerProfileId: r.data.lawyerProfileId,
                 scheduledAt: new Date(r.data.scheduledAt),
                 durationMinutes: r.data.durationMinutes,
@@ -98,11 +98,11 @@ bookingRouter.put("/:id/status", requireAuth, async (req: AuthRequest, res: Resp
         if (!booking) return res.status(404).json({ error: "Booking not found" });
 
         // Authorization checks
-        if (req.user!.role === "LAWYER" && booking.lawyer.userId !== req.user!.id) {
+        if (req.user!.role === "LAWYER" && booking.lawyer.userId !== req.user!.userId) {
             return res.status(403).json({ error: "Cannot modify a booking that belongs to another lawyer." });
         } else if (req.user!.role === "CLIENT" && r.data.status !== "CANCELLED") {
              // Clients can only cancel
-             if (booking.clientId !== req.user!.id) {
+             if (booking.clientId !== req.user!.userId) {
                  return res.status(403).json({ error: "Cannot cancel a booking that is not yours."});
              }
         }

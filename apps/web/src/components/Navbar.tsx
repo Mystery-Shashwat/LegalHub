@@ -16,6 +16,7 @@ export default function Navbar() {
         
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
           <Link href="/how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it Works</Link>
+          <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
           <Link href="/find-lawyer" className="text-muted-foreground hover:text-foreground transition-colors">Find a Lawyer</Link>
         </nav>
 

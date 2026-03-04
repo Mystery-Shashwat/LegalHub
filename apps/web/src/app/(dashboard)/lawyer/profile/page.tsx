@@ -18,6 +18,14 @@ const profileSchema = z.object({
   freeConsultMinutes: z.number().min(0).optional(),
   languages: z.string().optional(), // We'll split this by comma
   specializations: z.string().optional(), // We'll split this by comma 
+  city: z.string().optional(),
+  state: z.string().optional(),
+  courtsOfPractice: z.string().optional(),
+  experienceYears: z.number().min(0).optional(),
+  linkedinUrl: z.string().url("Must be valid URL").optional().or(z.literal("")),
+  websiteUrl: z.string().url("Must be valid URL").optional().or(z.literal("")),
+  degreeCollege: z.string().optional(),
+  degreeYear: z.number().optional(), 
 });
 
 export default function LawyerProfilePage() {
@@ -43,6 +51,14 @@ export default function LawyerProfilePage() {
             freeConsultMinutes: data.profile.freeConsultMinutes || 0,
             languages: data.profile.languages?.join(", ") || "",
             specializations: data.profile.specializations?.join(", ") || "",
+            city: data.profile.city || "",
+            state: data.profile.state || "",
+            courtsOfPractice: data.profile.courtsOfPractice?.join(", ") || "",
+            experienceYears: data.profile.experienceYears || 0,
+            linkedinUrl: data.profile.linkedinUrl || "",
+            websiteUrl: data.profile.websiteUrl || "",
+            degreeCollege: data.profile.degreeCollege || "",
+            degreeYear: data.profile.degreeYear || undefined,
           });
         }
       } catch (error) {
@@ -62,6 +78,7 @@ export default function LawyerProfilePage() {
         ...values,
         languages: typeof values.languages === 'string' && values.languages ? values.languages.split(",").map((s) => s.trim()) : [],
         specializations: typeof values.specializations === 'string' && values.specializations ? values.specializations.split(",").map((s) => s.trim()) : [],
+        courtsOfPractice: typeof values.courtsOfPractice === 'string' && values.courtsOfPractice ? values.courtsOfPractice.split(",").map((s) => s.trim()) : [],
       };
 
       await api.put("/lawyers/me", payload);
@@ -111,6 +128,52 @@ export default function LawyerProfilePage() {
               placeholder="e.g. Family Law, Corporate"
               {...register("specializations")}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="courtsOfPractice">Courts of Practice (comma separated)</Label>
+            <Input 
+              id="courtsOfPractice"
+              placeholder="e.g. Supreme Court, Bombay HC"
+              {...register("courtsOfPractice")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="city">City</Label>
+            <Input id="city" placeholder="Mumbai" {...register("city")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="state">State</Label>
+            <Input id="state" placeholder="Maharashtra" {...register("state")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="experienceYears">Years of Experience</Label>
+            <Input id="experienceYears" type="number" {...register("experienceYears", { valueAsNumber: true })} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="degreeCollege">Law College</Label>
+            <Input id="degreeCollege" placeholder="National Law University" {...register("degreeCollege")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="degreeYear">Graduation Year</Label>
+            <Input id="degreeYear" type="number" placeholder="2010" {...register("degreeYear", { valueAsNumber: true })} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+            <Input id="linkedinUrl" type="url" placeholder="https://linkedin.com/..." {...register("linkedinUrl")} />
+            {errors.linkedinUrl && <p className="text-sm text-destructive">{String(errors.linkedinUrl.message)}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website URL</Label>
+            <Input id="websiteUrl" type="url" placeholder="https://..." {...register("websiteUrl")} />
+            {errors.websiteUrl && <p className="text-sm text-destructive">{String(errors.websiteUrl.message)}</p>}
           </div>
 
           <div className="space-y-2">

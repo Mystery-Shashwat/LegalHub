@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 
 // Extend express Request to include user
 interface AuthRequest extends Request {
-    user?: { id: string; role: string; email: string };
+    user?: { userId: string; role: string; email: string };
 }
 
 const router = Router();
@@ -15,7 +15,7 @@ const router = Router();
 router.get("/me", requireClient, async (req: AuthRequest, res: Response) => {
     try {
         const clientProfile = await prisma.clientProfile.findUnique({
-            where: { userId: req.user!.id },
+            where: { userId: req.user!.userId },
             include: { user: { select: { name: true, email: true, phone: true } } }
         });
 
@@ -45,9 +45,9 @@ router.put("/me", requireClient, async (req: AuthRequest, res: Response) => {
         }
 
         const profile = await prisma.clientProfile.upsert({
-            where: { userId: req.user!.id },
+            where: { userId: req.user!.userId },
             create: {
-                userId: req.user!.id,
+                userId: req.user!.userId,
                 ...r.data
             },
             update: r.data

@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 
 // Extend express Request to include user
 interface AuthRequest extends Request {
-    user?: { id: string; role: string; email: string };
+    user?: { userId: string; role: string; email: string };
 }
 
 export const lawyerRouter = Router();
@@ -42,7 +42,7 @@ lawyerRouter.get("/", async (req, res) => {
 lawyerRouter.get("/me", requireAuth, async (req: AuthRequest, res: Response) => {
     try {
         const profile = await prisma.lawyerProfile.findUnique({
-            where: { userId: req.user!.id },
+            where: { userId: req.user!.userId },
             include: { user: { select: { name: true, email: true, phone: true } }, availability: true }
         });
 
@@ -62,6 +62,14 @@ const updateSchema = z.object({
     freeConsultMinutes: z.number().optional(),
     languages: z.array(z.string()).optional(),
     specializations: z.array(z.string()).optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    courtsOfPractice: z.array(z.string()).optional(),
+    experienceYears: z.number().optional(),
+    linkedinUrl: z.string().optional(),
+    websiteUrl: z.string().optional(),
+    degreeCollege: z.string().optional(),
+    degreeYear: z.number().optional()
 });
 
 lawyerRouter.put("/me", requireAuth, async (req: AuthRequest, res: Response) => {
@@ -70,7 +78,7 @@ lawyerRouter.put("/me", requireAuth, async (req: AuthRequest, res: Response) => 
         if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors });
 
         const profile = await prisma.lawyerProfile.update({
-            where: { userId: req.user!.id },
+            where: { userId: req.user!.userId },
             data: r.data
         });
 
@@ -96,7 +104,7 @@ lawyerRouter.put("/me/availability", requireAuth, async (req: AuthRequest, res: 
         const r = availabilitySchema.safeParse(req.body);
         if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors });
 
-        const profile = await prisma.lawyerProfile.findUnique({ where: { userId: req.user!.id } });
+        const profile = await prisma.lawyerProfile.findUnique({ where: { userId: req.user!.userId } });
         if (!profile) return res.status(404).json({ error: "Profile not found" });
 
         // Delete old availability and insert new ones

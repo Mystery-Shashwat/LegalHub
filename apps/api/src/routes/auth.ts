@@ -55,6 +55,9 @@ const lawyerSchema = z.object({
   freeConsultMinutes:z.number().default(0),
   linkedinUrl:       z.string().url().optional(),
   websiteUrl:        z.string().url().optional(),
+  certificateOfPracticeUrl: z.string().url().optional(),
+  degreeDocumentUrl: z.string().url().optional(),
+  govtIdUrl:         z.string().url().optional(),
 })
 
 authRouter.post('/register/lawyer', async (req, res) => {
@@ -76,6 +79,19 @@ authRouter.post('/register/lawyer', async (req, res) => {
             role: 'LAWYER', lawyerProfile: { create: { ...profile, status: 'PENDING' } } },
     include: { lawyerProfile: { select: { id: true, status: true } } }
   })
+
+  // Seed default availability slots (Mon-Fri 09:00 - 17:00) so bookings can happen immediately
+  if (user.lawyerProfile) {
+      const defaultSlots = [1, 2, 3, 4, 5].map(day => ({
+          lawyerProfileId: user.lawyerProfile!.id,
+          dayOfWeek: day,
+          startTime: "09:00",
+          endTime: "17:00",
+          isActive: true
+      }));
+      await prisma.availability.createMany({ data: defaultSlots });
+  }
+
   const tokens = generateTokens(user.id, user.role)
   await saveRefresh(user.id, tokens.refreshToken)
   res.status(201).json({

@@ -11,6 +11,7 @@ import {
   Clock, 
   FileText, 
   MessageSquare,
+  Settings,
   LogOut 
 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -37,6 +38,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { title: "Profile", href: "/lawyer/profile", icon: User },
     { title: "Cases", href: "/cases", icon: FileText },
     { title: "Messages", href: "/messages", icon: MessageSquare },
+    { title: "Settings", href: "/settings", icon: Settings },
   ];
 
   const clientLinks = [
@@ -44,9 +46,18 @@ export default function Sidebar({ className }: SidebarProps) {
     { title: "My Bookings", href: "/client/bookings", icon: Calendar },
     { title: "My Cases", href: "/cases", icon: FileText },
     { title: "Messages", href: "/messages", icon: MessageSquare },
+    { title: "Settings", href: "/settings", icon: Settings },
   ];
 
-  const links = user.role === "LAWYER" ? lawyerLinks : clientLinks;
+  const adminLinks = [
+    { title: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
+    { title: "Lawyers", href: "/admin/lawyers", icon: User },
+    { title: "Clients", href: "/admin/clients", icon: User },
+    { title: "Disputes", href: "/admin/disputes", icon: MessageSquare },
+    { title: "Settings", href: "/settings", icon: Settings },
+  ];
+
+  const links = user.role === "ADMIN" ? adminLinks : user.role === "LAWYER" ? lawyerLinks : clientLinks;
 
   return (
     <div className={cn("pb-12 h-full flex flex-col", className)}>

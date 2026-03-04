@@ -1,10 +1,6 @@
 "use client";
 
-import { useAuth } from "@/store/auth";
-
 export default function LawyerDashboardPage() {
-    const { user } = useAuth();
-    
     return (
         <div className="space-y-6">
             <div>

@@ -42,6 +42,10 @@ const lawyerSchema = z.object({
   freeConsultMinutes: z.coerce.number().default(0),
   linkedinUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  profilePhotoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  certificateOfPracticeUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  degreeDocumentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  govtIdUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 })
 
 type LawyerForm = z.infer<typeof lawyerSchema>
@@ -68,7 +72,8 @@ export default function RegisterLawyerPage() {
           ...data,
           specializations: data.specializations.split(',').map(s => s.trim()).filter(Boolean),
           courtsOfPractice: data.courtsOfPractice.split(',').map(s => s.trim()).filter(Boolean),
-          languages: data.languages.split(',').map(s => s.trim()).filter(Boolean)
+          languages: data.languages.split(',').map(s => s.trim()).filter(Boolean),
+          profilePhotoUrl: data.profilePhotoUrl
       }
       const res = await api.post('/auth/register/lawyer', payload)
       toast.success(res.data?.message || "Registered successfully! Please complete verification.")
@@ -148,9 +153,24 @@ export default function RegisterLawyerPage() {
                             {errors.barCouncilState && <p className="text-xs text-destructive">{errors.barCouncilState.message as string}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="profileImageUrl">Profile Image URL (Optional)</Label>
-                            <Input id="profileImageUrl" placeholder="https://..." {...register("profileImageUrl")} />
-                            {errors.profileImageUrl && <p className="text-xs text-destructive">{errors.profileImageUrl.message as string}</p>}
+                            <Label htmlFor="profilePhotoUrl">Profile Image URL (Optional)</Label>
+                            <Input id="profilePhotoUrl" placeholder="https://..." {...register("profilePhotoUrl")} />
+                            {errors.profilePhotoUrl && <p className="text-xs text-destructive">{errors.profilePhotoUrl.message as string}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="certificateOfPracticeUrl">Bar Council Certificate URL (Required for Approval)</Label>
+                            <Input id="certificateOfPracticeUrl" placeholder="https://..." {...register("certificateOfPracticeUrl")} />
+                            {errors.certificateOfPracticeUrl && <p className="text-xs text-destructive">{errors.certificateOfPracticeUrl.message as string}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="degreeDocumentUrl">Law Degree Document URL (Optionsal)</Label>
+                            <Input id="degreeDocumentUrl" placeholder="https://..." {...register("degreeDocumentUrl")} />
+                            {errors.degreeDocumentUrl && <p className="text-xs text-destructive">{errors.degreeDocumentUrl.message as string}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="govtIdUrl">Govt ID URL (Aadhaar/PAN) (Required for Approval)</Label>
+                            <Input id="govtIdUrl" placeholder="https://..." {...register("govtIdUrl")} />
+                            {errors.govtIdUrl && <p className="text-xs text-destructive">{errors.govtIdUrl.message as string}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="enrollmentYear">Enrollment Year</Label>

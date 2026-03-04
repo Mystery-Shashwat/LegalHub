@@ -82,6 +82,29 @@ paymentRouter.post("/verify", requireAuth, async (req: Request, res: Response) =
               paymentId: razorpay_payment_id
           }
       });
+      
+      const bookingRecord = await prisma.booking.findUnique({
+          where: { id: bookingId }
+      });
+      
+      if (bookingRecord) {
+          const amount = bookingRecord.amount;
+          const commissionAmount = amount * 0.10; // 10% platform fee
+          const lawyerPayout = amount - commissionAmount; // 90% to lawyer
+          
+          await prisma.payment.create({
+              data: {
+                  bookingId,
+                  amount,
+                  razorpayOrderId: razorpay_order_id,
+                  razorpayPaymentId: razorpay_payment_id,
+                  status: "PAID",
+                  commissionAmount,
+                  lawyerPayout,
+                  paidAt: new Date()
+              }
+          });
+      }
       res.json({ success: true, message: "Payment verified successfully" });
     } else {
       res.status(400).json({ success: false, error: "Invalid signature" });

@@ -45,6 +45,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
 // ─── USER (base for all 3 roles) ──────────────
 model User {
   id               String   @id @default(cuid())
@@ -66,6 +71,7 @@ model User {
   reviewsGiven     Review[]   @relation("ReviewsByClient")
   sentMessages     Message[]  @relation("SentMessages")
   refreshTokens    RefreshToken[]
+  disputes         Dispute[]  @relation("UserDisputes")
 }
 
 // ─── CLIENT PROFILE ───────────────────────────
@@ -238,6 +244,18 @@ model Message {
   fileUrl        String?
   readAt         DateTime?
   createdAt      DateTime @default(now())
-
   @@index([conversationId])
 }
+
+// ─── DISPUTE ───────────────────────────────────
+model Dispute {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation("UserDisputes", fields: [userId], references: [id])
+  reason      String
+  description String?
+  status      DisputeStatus @default(OPEN)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
