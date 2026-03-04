@@ -3,6 +3,12 @@
 import Link from "next/link"
 import { useAuth } from "@/store/auth"
 import { Button } from "@/components/ui/button"
+import { Menu } from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -20,13 +26,31 @@ export default function Navbar() {
           <Link href="/find-lawyer" className="text-muted-foreground hover:text-foreground transition-colors">Find a Lawyer</Link>
         </nav>
 
-        <div className="flex items-center gap-4">
+        {/* Mobile Nav */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle mobile menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[250px] sm:w-[300px]">
+            <nav className="flex flex-col gap-4 mt-8">
+              <Link href="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How it Works</Link>
+              <Link href="/blog" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
+              <Link href="/find-lawyer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Find a Lawyer</Link>
+            </nav>
+          </SheetContent>
+        </Sheet>
+
+        <div className="flex items-center gap-2 md:gap-4">
           {user ? (
             <>
               <Link href={user.role === 'LAWYER' ? '/lawyer/dashboard' : user.role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard'}>
-                <Button variant="ghost">Dashboard</Button>
+                <Button variant="ghost" className="hidden sm:inline-flex">Dashboard</Button>
+                <Button variant="ghost" className="sm:hidden px-2">Dash</Button>
               </Link>
-              <Button variant="outline" onClick={logout}>Sign Out</Button>
+              <Button variant="outline" onClick={logout} className="hidden sm:inline-flex">Sign Out</Button>
             </>
           ) : (
              <>
@@ -34,7 +58,7 @@ export default function Navbar() {
                   <Button variant="ghost">Log In</Button>
                 </Link>
                 <Link href="/register">
-                  <Button>Sign Up</Button>
+                  <Button size="sm" className="md:size-default">Sign Up</Button>
                 </Link>
              </>
           )}

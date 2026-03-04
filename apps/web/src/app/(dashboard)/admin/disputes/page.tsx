@@ -75,7 +75,8 @@ export default function AdminDisputesPage() {
                 <p className="text-muted-foreground mt-2">Manage and resolve user disputes and complaints.</p>
             </div>
 
-            <div className="border rounded-lg bg-card">
+            {/* Desktop Table View */}
+            <div className="border rounded-lg bg-card hidden md:block">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -129,6 +130,54 @@ export default function AdminDisputesPage() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {disputes.length === 0 ? (
+                    <div className="border rounded-lg bg-card text-center py-6 text-muted-foreground shadow-sm">
+                        No disputes found.
+                    </div>
+                ) : (
+                    disputes.map((dispute) => (
+                        <div key={dispute.id} className="border rounded-lg bg-card p-4 space-y-4 shadow-sm">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-lg">{dispute.user.name}</div>
+                                    <div className="text-sm text-muted-foreground">{dispute.user.email} &bull; <span className="uppercase">{dispute.user.role}</span></div>
+                                </div>
+                                <Badge variant={dispute.status === "RESOLVED" ? "secondary" : "destructive"}>
+                                    {dispute.status}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 text-sm pt-2 border-t">
+                                <div>
+                                    <div className="text-muted-foreground mb-1">Reason: <span className="font-medium text-foreground">{dispute.reason}</span></div>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground mb-1">Description:</div>
+                                    <div className="text-muted-foreground italic text-xs leading-relaxed max-h-24 overflow-y-auto pr-2">
+                                        &quot;{dispute.description || "No description provided."}&quot;
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground pt-2 border-t flex items-center justify-between">
+                                <span>{format(new Date(dispute.createdAt), "MMM d, yyyy")}</span>
+                                {dispute.status === "OPEN" && (
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => handleResolve(dispute.id)}
+                                        disabled={resolvingId === dispute.id}
+                                    >
+                                        {resolvingId === dispute.id ? "Resolving..." : "Mark Resolved"}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

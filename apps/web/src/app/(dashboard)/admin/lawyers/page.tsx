@@ -52,7 +52,8 @@ export default function AdminLawyersPage() {
         <p className="text-muted-foreground">Approve or reject pending lawyer registration requests.</p>
       </div>
 
-      <div className="rounded-md border">
+      {/* Desktop Table View */}
+      <div className="rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -119,6 +120,68 @@ export default function AdminLawyersPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {pendingLawyers.length === 0 ? (
+          <div className="rounded-md border bg-card text-center py-8 text-muted-foreground shadow-sm">
+            No pending lawyer approvals.
+          </div>
+        ) : (
+            pendingLawyers.map((layer) => (
+              <div key={layer.id} className="rounded-md border bg-card p-4 space-y-4 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <div className="font-bold text-lg">{layer.user.name}</div>
+                        <div className="text-sm text-muted-foreground">{layer.user.email}</div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
+                    <div>
+                        <div className="text-muted-foreground mb-1">Bar Council</div>
+                        <div className="font-medium">{layer.barCouncilNumber}</div>
+                        <div className="text-xs text-muted-foreground">{layer.barCouncilState}</div>
+                    </div>
+                    <div>
+                        <div className="text-muted-foreground mb-1">Experience</div>
+                        <Badge variant="outline">{layer.experienceYears} Years</Badge>
+                    </div>
+                </div>
+
+                <div className="pt-2 border-t">
+                    <div className="text-muted-foreground mb-2 text-sm">Verification Documents</div>
+                    <div className="flex gap-4 text-sm">
+                       {layer.certificateOfPracticeUrl ? <a href={layer.certificateOfPracticeUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Bar Cert</a> : <span className="text-muted-foreground line-through">Bar Cert</span>}
+                       {layer.degreeDocumentUrl ? <a href={layer.degreeDocumentUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Degree</a> : <span className="text-muted-foreground line-through">Degree</span>}
+                       {layer.govtIdUrl ? <a href={layer.govtIdUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Govt ID</a> : <span className="text-muted-foreground line-through">Govt ID</span>}
+                    </div>
+                </div>
+
+                 <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between items-center">
+                     <span>Registered: {format(new Date(layer.createdAt), "MMM d, yyyy")}</span>
+                 </div>
+                 
+                 <div className="flex gap-2">
+                     <Button 
+                         variant="default" 
+                         className="flex-1 bg-green-600 hover:bg-green-700"
+                         onClick={() => handleDecision(layer.id, "VERIFIED")}
+                     >
+                         Approve
+                     </Button>
+                     <Button 
+                         variant="destructive" 
+                         className="flex-1"
+                         onClick={() => handleDecision(layer.id, "REJECTED")}
+                     >
+                         Reject
+                     </Button>
+                 </div>
+              </div>
+            ))
+        )}
       </div>
     </div>
   );

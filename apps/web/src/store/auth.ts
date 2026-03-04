@@ -1,6 +1,6 @@
 'use client'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import api from '@/lib/api'
 
 interface User { id: string; name: string; email: string; role: string; lawyerStatus?: string }
@@ -22,21 +22,21 @@ export const useAuth = create<AuthStore>()(
     login: async (email, password) => {
       set({ isLoading: true })
       const { data } = await api.post('/auth/login', { email, password })
-      localStorage.setItem('accessToken',  data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
+      sessionStorage.setItem('accessToken',  data.accessToken)
+      sessionStorage.setItem('refreshToken', data.refreshToken)
       set({ user: data.user, token: data.accessToken, isLoading: false })
       return data.redirectTo
     },
 
     logout: () => {
-      const rt = localStorage.getItem('refreshToken')
+      const rt = sessionStorage.getItem('refreshToken')
       if (rt) api.post('/auth/logout', { refreshToken: rt }).catch(() => {})
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+      sessionStorage.removeItem('accessToken')
+      sessionStorage.removeItem('refreshToken')
       set({ user: null, token: null })
       window.location.href = '/'
     },
 
     setUser: (u) => set({ user: u })
-  }), { name: 'auth', partialize: (s) => ({ user: s.user, token: s.token }) })
+  }), { name: 'auth', storage: createJSONStorage(() => sessionStorage), partialize: (s) => ({ user: s.user, token: s.token }) })
 )

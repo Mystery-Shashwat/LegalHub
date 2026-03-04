@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import { ArrowLeft } from "lucide-react";
 
 interface Message {
   id: string;
@@ -47,15 +48,15 @@ export default function MessagesPage() {
             data.bookings.forEach((b: any) => {
                 const isLawyer = user?.role === "LAWYER";
                 const otherUser = isLawyer ? b.client : b.lawyer.user;
-                const otherId = isLawyer ? b.clientId : b.lawyerProfileId; // Requires backend fix to return deep User ID, assuming its mapped
+                const otherId = otherUser.id; // We patched the backend to always return the underlying User ID
 
                 // Robust Room ID generation (sorted alphabetically)
-                const ids = [user?.id, otherUser.id || otherId].sort();
+                const ids = [user?.id as string, otherId as string].sort();
                 const roomId = `${ids[0]}_${ids[1]}`;
 
                 if (!uniqueContacts.has(otherUser.email)) {
                     uniqueContacts.set(otherUser.email, {
-                        id: otherUser.id || otherId,
+                        id: otherId,
                         name: otherUser.name,
                         role: isLawyer ? "CLIENT" : "LAWYER",
                         roomId
@@ -74,8 +75,10 @@ export default function MessagesPage() {
     // 2. Initialize Socket Connection
     if (!token) return;
     
-    // eslint-disable-next-line no-undef
-    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001", {
+    // Process env URL has `/api` at the end, but socket needs the host root
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
+    
+    socketRef.current = io(socketUrl, {
         auth: { token }
     });
 
@@ -126,7 +129,7 @@ export default function MessagesPage() {
   return (
     <div className="flex h-[calc(100vh-8rem)] rounded-xl border bg-card text-card-foreground shadow">
       {/* Sidebar Contacts */}
-      <div className="w-80 border-r flex flex-col">
+      <div className={`w-full md:w-80 border-r flex-col ${activeContact ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b font-semibold">Conversations</div>
         <ScrollArea className="flex-1">
             {contacts.length === 0 && (
@@ -153,14 +156,17 @@ export default function MessagesPage() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex-col ${!activeContact ? 'hidden md:flex' : 'flex'}`}>
         {activeContact ? (
             <>
                 <div className="p-4 border-b flex items-center gap-3 bg-muted/20">
+                    <Button variant="ghost" size="icon" className="md:hidden -ml-2 shrink-0" onClick={() => setActiveContact(null)}>
+                        <ArrowLeft className="w-5 h-5" />
+                    </Button>
                     <Avatar>
                         <AvatarFallback>{activeContact.name.substring(0,2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div className="font-semibold">{activeContact.name}</div>
+                    <div className="font-semibold truncate">{activeContact.name}</div>
                 </div>
                 
                 <ScrollArea className="flex-1 p-4" ref={scrollRef}>

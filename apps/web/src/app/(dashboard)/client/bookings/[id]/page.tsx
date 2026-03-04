@@ -60,8 +60,8 @@ export default function ClientBookingConfirmationPage() {
         <p className="text-muted-foreground">Review your appointment details and complete payment.</p>
       </div>
 
-      <div className="bg-card text-card-foreground rounded-xl border p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4 border-b pb-4">
+      <div className="bg-card text-card-foreground rounded-xl border p-4 sm:p-6 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-b pb-4">
             <div>
                 <p className="text-sm text-muted-foreground">Lawyer</p>
                 <p className="font-semibold">{booking.lawyer.user.name}</p>
@@ -80,7 +80,7 @@ export default function ClientBookingConfirmationPage() {
             </div>
         </div>
 
-        <div className="flex justify-between items-center pt-2">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center pt-2 gap-4 sm:gap-0">
             <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="text-2xl font-bold">₹{booking.amount}</p>

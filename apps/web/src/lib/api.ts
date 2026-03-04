@@ -4,7 +4,7 @@ const api = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL })
 
 // Attach access token to every request
 api.interceptors.request.use((cfg) => {
-  const t = localStorage.getItem('accessToken')
+  const t = sessionStorage.getItem('accessToken')
   if (t) cfg.headers.Authorization = `Bearer ${t}`
   return cfg
 })
@@ -16,12 +16,12 @@ api.interceptors.response.use(
     const orig = err.config
     if (err.response?.status === 401 && !orig._retry) {
       orig._retry = true
-      const rt = localStorage.getItem('refreshToken')
+      const rt = sessionStorage.getItem('refreshToken')
       if (!rt) { window.location.href = '/login'; return }
       try {
         const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, { refreshToken: rt })
-        localStorage.setItem('accessToken',  data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        sessionStorage.setItem('accessToken',  data.accessToken)
+        sessionStorage.setItem('refreshToken', data.refreshToken)
         orig.headers.Authorization = `Bearer ${data.accessToken}`
         return api(orig)
       } catch { window.location.href = '/login' }

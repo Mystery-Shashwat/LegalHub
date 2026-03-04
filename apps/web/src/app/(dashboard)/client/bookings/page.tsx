@@ -74,7 +74,8 @@ export default function ClientBookingsPage() {
                 </Link>
             </div>
 
-            <div className="border rounded-lg bg-card">
+            {/* Desktop Table View */}
+            <div className="border rounded-lg bg-card hidden md:block">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -142,6 +143,57 @@ export default function ClientBookingsPage() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {bookings.length === 0 ? (
+                    <div className="border rounded-lg bg-card text-center py-12 text-muted-foreground shadow-sm">
+                        <Calendar className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                        You have no bookings yet.
+                    </div>
+                ) : (
+                    bookings.map((booking) => (
+                        <div key={booking.id} className="border rounded-lg bg-card p-4 space-y-4 shadow-sm">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-lg">{booking.lawyer.user.name}</div>
+                                    <div className="text-sm text-muted-foreground">{booking.lawyer.user.email}</div>
+                                </div>
+                                {getStatusBadge(booking.status)}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <div className="text-muted-foreground mb-1">Date & Time</div>
+                                    <div className="font-medium">{format(new Date(booking.scheduledAt), "MMM d, yyyy")}</div>
+                                    <div className="text-xs text-muted-foreground">{format(new Date(booking.scheduledAt), "h:mm a")}</div>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
+                                       {booking.type === 'video' ? <Video className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                                       <span className="capitalize">{booking.type}</span>
+                                    </div>
+                                    <div className="font-medium flex items-center">
+                                        <IndianRupee className="w-3 h-3 mr-0.5" /> {booking.amount}
+                                    </div>
+                                    {!booking.isPaid && booking.status !== "CANCELLED" && (
+                                        <div className="text-[10px] text-destructive font-medium uppercase tracking-wider mt-0.5">Unpaid</div>
+                                    )}
+                                    {booking.isPaid && (
+                                        <div className="text-[10px] text-green-600 font-medium uppercase tracking-wider mt-0.5">Paid</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Link href={`/client/bookings/${booking.id}`} className="block pt-2 border-t">
+                                <Button className="w-full" variant={!booking.isPaid && booking.status !== "CANCELLED" ? "default" : "outline"}>
+                                    {!booking.isPaid && booking.status !== "CANCELLED" ? "Complete Payment" : "View Full Details"}
+                                </Button>
+                            </Link>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

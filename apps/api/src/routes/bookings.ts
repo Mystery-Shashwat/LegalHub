@@ -21,7 +21,7 @@ bookingRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
         if (role === "CLIENT") {
             bookings = await prisma.booking.findMany({
                 where: { clientId: userId },
-                include: { lawyer: { include: { user: { select: { name: true, email: true } } } } },
+                include: { lawyer: { include: { user: { select: { id: true, name: true, email: true } } } } },
                 orderBy: { scheduledAt: "desc" }
             });
         } else if (role === "LAWYER") {
@@ -30,7 +30,7 @@ bookingRouter.get("/", requireAuth, async (req: AuthRequest, res: Response) => {
 
             bookings = await prisma.booking.findMany({
                 where: { lawyerProfileId: profile.id },
-                include: { client: { select: { name: true, email: true } } },
+                include: { client: { select: { id: true, name: true, email: true } } },
                 orderBy: { scheduledAt: "desc" }
             });
         } else {
