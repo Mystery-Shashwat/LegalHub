@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────
+enum Role {
+  ADMIN
+  LAWYER
+  CLIENT
+}
+
+enum LawyerStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+// ─── USER (base for all 3 roles) ──────────────
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  phone            String?  @unique
+  name             String
+  passwordHash     String
+  role             Role     @default(CLIENT)
+  avatar           String?
+  isEmailVerified  Boolean  @default(false)
+  isPhoneVerified  Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  lawyerProfile    LawyerProfile?
+  clientProfile    ClientProfile?
+  bookingsAsClient Booking[]  @relation("ClientBookings")
+  reviewsGiven     Review[]   @relation("ReviewsByClient")
+  sentMessages     Message[]  @relation("SentMessages")
+  refreshTokens    RefreshToken[]
+}
+
+// ─── CLIENT PROFILE ───────────────────────────
+model ClientProfile {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city      String?
+  state     String?
+  about     String? // brief legal need description
+}
+
+// ─── LAWYER PROFILE (all professional fields) ─
+model LawyerProfile {
+  id                      String       @id @default(cuid())
+  userId                  String       @unique
+  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  barCouncilNumber        String       @unique
+  barCouncilState         String
+  enrollmentYear          Int
+  degreeCollege           String?
+  degreeYear              Int?
+
+  specializations         String[]     // ["Criminal Law", "Family Law"]
+  courtsOfPractice        String[]
+  experienceYears         Int          @default(0)
+  bio                     String?
+  city                    String
+  state                   String
+  languages               String[]
+  hourlyRate              Float
+  freeConsultation        Boolean      @default(false)
+  freeConsultMinutes      Int          @default(0)
+
+  status                  LawyerStatus @default(PENDING)
+  rejectionReason         String?
+  verifiedAt              DateTime?
+  verifiedByAdminId       String?
+
+  certificateOfPracticeUrl String?    // bar council cert
+  degreeDocumentUrl        String?    // LLB/LLM degree
+  govtIdUrl                String?    // Aadhaar/PAN
+  profilePhotoUrl          String?
+
+  avgRating               Float        @default(0)
+  totalReviews            Int          @default(0)
+  linkedinUrl             String?
+  websiteUrl              String?
+
+  bookings                Booking[]    @relation("LawyerBookings")
+  reviews                 Review[]     @relation("LawyerReviews")
+  availability            Availability[]
+  cases                   Case[]
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+// ─── REFRESH TOKEN ─────────────────────────────
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ─── AVAILABILITY SLOTS ────────────────────────
+model Availability {
+  id              String       @id @default(cuid())
+  lawyerProfileId String
+  lawyer          LawyerProfile @relation(fields: [lawyerProfileId], references: [id])
+  dayOfWeek       Int          // 0=Sun … 6=Sat
+  startTime       String       // "09:00"
+  endTime         String       // "18:00"
+  isActive        Boolean      @default(true)
+}
+
+// ─── BOOKING ───────────────────────────────────
+model Booking {
+  id              String        @id @default(cuid())
+  clientId        String
+  lawyerProfileId String
+  client          User          @relation("ClientBookings", fields: [clientId], references: [id])
+  lawyer          LawyerProfile @relation("LawyerBookings", fields: [lawyerProfileId], references: [id])
+  scheduledAt     DateTime
+  durationMinutes Int           @default(60)
+  status          BookingStatus @default(PENDING)
+  type            String        @default("video") // video | chat | in-person
+  amount          Float
+  isPaid          Boolean       @default(false)
+  paymentId       String?
+  meetingUrl      String?
+  clientNotes     String?
+  createdAt       DateTime      @default(now())
+  payment         Payment?
+  review          Review?
+  case            Case?
+}
+
+// ─── PAYMENT ───────────────────────────────────
+model Payment {
+  id               String        @id @default(cuid())
+  bookingId        String        @unique
+  booking          Booking       @relation(fields: [bookingId], references: [id])
+  amount           Float
+  currency         String        @default("INR")
+  razorpayOrderId  String?
+  razorpayPaymentId String?
+  status           PaymentStatus @default(PENDING)
+  commissionAmount Float         // 10% cut
+  lawyerPayout     Float         // 90% to lawyer
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+}
+
+// ─── REVIEW ────────────────────────────────────
+model Review {
+  id              String        @id @default(cuid())
+  bookingId       String        @unique // one review per booking
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  clientId        String
+  client          User          @relation("ReviewsByClient", fields: [clientId], references: [id])
+  lawyerProfileId String
+  lawyer          LawyerProfile @relation("LawyerReviews", fields: [lawyerProfileId], references: [id])
+  rating          Int           // 1–5
+  comment         String?
+  createdAt       DateTime      @default(now())
+}
+
+// ─── CASE ──────────────────────────────────────
+model Case {
+  id              String        @id @default(cuid())
+  bookingId       String?       @unique
+  booking         Booking?      @relation(fields: [bookingId], references: [id])
+  clientId        String
+  lawyerProfileId String
+  lawyer          LawyerProfile @relation(fields: [lawyerProfileId], references: [id])
+  title           String
+  description     String?
+  practiceArea    String
+  status          CaseStatus    @default(OPEN)
+  documents       Document[]
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// ─── DOCUMENT ──────────────────────────────────
+model Document {
+  id         String   @id @default(cuid())
+  caseId     String
+  case       Case     @relation(fields: [caseId], references: [id])
+  name       String
+  url        String   // R2 URL
+  fileType   String
+  sizeBytes  Int
+  uploadedBy String   // userId
+  createdAt  DateTime @default(now())
+}
+
+// ─── MESSAGE ───────────────────────────────────
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String   // format: "userId1_userId2" (sorted)
+  senderId       String
+  sender         User     @relation("SentMessages", fields: [senderId], references: [id])
+  content        String
+  fileUrl        String?
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+}
