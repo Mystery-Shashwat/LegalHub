@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/store/auth"
+import { Scale } from "lucide-react"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -52,43 +53,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-muted/30">
-      <Card className="w-full max-w-md shadow-lg border-muted">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-          <CardDescription>
-            Enter your email to sign in to your LegalHub account
+    <div className="flex min-h-screen items-center justify-center p-4 bg-muted/20 relative overflow-hidden">
+      {/* Decorative background element */}
+      <div className="absolute top-0 left-0 w-full h-96 bg-primary/5 -skew-y-6 transform origin-top-left -z-10" />
+      
+      <Card className="w-full max-w-md shadow-2xl border-border/50 bg-card/95 backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-6 pt-8">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner">
+              <Scale className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Welcome back</CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
+            Sign in to your LegalHub account
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-semibold">Email Address</Label>
               <Input 
                 id="email" 
                 type="email" 
                 placeholder="m@example.com" 
+                className="h-12 bg-background"
                 {...register("email")}
               />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              {errors.email && <p className="text-sm text-destructive font-medium">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                <Label htmlFor="password" className="font-semibold">Password</Label>
+                <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
                   Forgot password?
                 </Link>
               </div>
               <Input 
                 id="password" 
                 type="password" 
+                className="h-12 bg-background"
                 {...register("password")}
               />
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              {errors.password && <p className="text-sm text-destructive font-medium">{errors.password.message}</p>}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button className="w-full" type="submit" disabled={isLoading}>
+          <CardFooter className="flex flex-col space-y-6 pb-8">
+            <Button className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg transition-all" type="submit" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
             <div className="text-center text-sm text-muted-foreground">

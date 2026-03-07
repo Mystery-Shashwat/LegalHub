@@ -127,7 +127,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] rounded-xl border bg-card text-card-foreground shadow">
+    <div className="flex h-[calc(100vh-8rem)] rounded-xl border border-border/50 bg-card/95 backdrop-blur-sm text-card-foreground shadow-lg overflow-hidden">
       {/* Sidebar Contacts */}
       <div className={`w-full md:w-80 border-r flex-col ${activeContact ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b font-semibold">Conversations</div>

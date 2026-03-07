@@ -5,6 +5,18 @@ import LawyerCard from "@/components/LawyerCard"
 import SearchBar from "@/components/SearchBar"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
+import { Briefcase, Building2, Gavel, Scale, FileText, Heart, Globe, Shield } from "lucide-react"
+
+const PRACTICE_AREAS = [
+  { id: "family", label: "Family Law", icon: Heart },
+  { id: "real-estate", label: "Real Estate", icon: Building2 },
+  { id: "criminal", label: "Criminal Law", icon: Gavel },
+  { id: "corporate", label: "Corporate Law", icon: Briefcase },
+  { id: "immigration", label: "Immigration", icon: Globe },
+  { id: "civil", label: "Civil Rights", icon: Scale },
+  { id: "ip", label: "Intellectual Property", icon: FileText },
+  { id: "personal-injury", label: "Personal Injury", icon: Shield },
+];
 
 export default function FindLawyerPage() {
   const [query, setQuery] = useState("")
@@ -54,16 +66,43 @@ export default function FindLawyerPage() {
   }, [query])
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <div className="bg-primary text-primary-foreground py-16 px-4">
-        <div className="container mx-auto text-center max-w-3xl">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">Find the Right Lawyer for Your Needs</h1>
-          <p className="text-xl opacity-90 mb-8">Browse verified top-rated advocates across India.</p>
+    <div className="min-h-screen bg-muted/10">
+      {/* Premium UI Hero Section */}
+      <div className="bg-background border-b py-20 px-4">
+        <div className="container mx-auto text-center max-w-4xl pt-8">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 text-foreground">
+            Find Trusted Legal Counsel
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+            Find a practice area and/or professional to securely handle your legal needs.
+          </p>
           <SearchBar onSearch={setQuery} />
         </div>
       </div>
 
-      <div className="container mx-auto py-12 px-4 max-w-5xl">
+      {/* Practice Area Interactive Grid */}
+      {!query && (
+        <div className="container mx-auto py-16 px-4 max-w-5xl">
+          <h2 className="text-2xl font-bold mb-8">Practice Area Grid</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {PRACTICE_AREAS.map((area) => (
+              <button 
+                key={area.id}
+                onClick={() => setQuery(area.label)}
+                className="flex flex-col items-center justify-center p-6 bg-card border rounded-xl shadow-sm hover:shadow-md hover:border-primary transition-all group"
+              >
+                <div className="p-3 bg-primary/5 rounded-full mb-4 group-hover:bg-primary/10 transition-colors">
+                  <area.icon className="w-8 h-8 text-primary/80 group-hover:text-primary" />
+                </div>
+                <span className="font-semibold text-foreground/90">{area.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Search Results Area */}
+      <div className="container mx-auto pb-20 pt-10 px-4 max-w-5xl">
         <div className="flex justify-between items-center mb-6">
            <h2 className="text-2xl font-semibold">
                {query ? `Search results for "${query}"` : "Verified Lawyers"}

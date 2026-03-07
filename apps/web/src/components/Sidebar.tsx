@@ -12,20 +12,24 @@ import {
   FileText, 
   MessageSquare,
   Settings,
-  LogOut 
+  LogOut,
+  Scale
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 
-type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
+type SidebarProps = React.HTMLAttributes<HTMLDivElement> & {
+  onNavClick?: () => void;
+};
 
-export default function Sidebar({ className }: SidebarProps) {
+export default function Sidebar({ className, onNavClick }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
+    if (onNavClick) onNavClick();
     router.push("/login");
   };
 
@@ -60,26 +64,41 @@ export default function Sidebar({ className }: SidebarProps) {
   const links = user.role === "ADMIN" ? adminLinks : user.role === "LAWYER" ? lawyerLinks : clientLinks;
 
   return (
-    <div className={cn("pb-12 h-full flex flex-col", className)}>
+    <div className={cn("pb-12 h-full flex flex-col bg-sidebar text-sidebar-foreground", className)}>
       <div className="space-y-4 py-4 flex-1">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+          {/* Brand Logo */}
+          <div className="mb-8 px-4 flex items-center h-10">
+            <Link href="/" className="text-xl font-bold tracking-tight flex items-center gap-2 transition-opacity hover:opacity-80">
+              <Scale className="w-6 h-6 text-primary" />
+              LegalHub
+            </Link>
+          </div>
+          <h2 className="mb-2 px-4 text-xs font-semibold tracking-wider text-sidebar-accent-foreground/50 uppercase">
             Menu
           </h2>
           <div className="space-y-1">
-            {links.map((link) => (
-              <Button
-                key={link.href}
-                variant={pathname.startsWith(link.href) ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                asChild
-              >
-                <Link href={link.href}>
-                  <link.icon className="mr-2 h-4 w-4" />
-                  {link.title}
-                </Link>
-              </Button>
-            ))}
+            {links.map((link) => {
+              const isActive = pathname.startsWith(link.href);
+              return (
+                <Button
+                  key={link.href}
+                  variant={isActive ? "default" : "ghost"}
+                  className={cn(
+                    "w-full justify-start",
+                    isActive 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                  asChild
+                >
+                  <Link href={link.href} onClick={() => { if (onNavClick) onNavClick(); }}>
+                    <link.icon className="mr-3 h-4 w-4" />
+                    {link.title}
+                  </Link>
+                </Button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -88,8 +107,8 @@ export default function Sidebar({ className }: SidebarProps) {
           <p className="font-medium text-foreground">{user.name}</p>
           <p>{user.email}</p>
         </div>
-        <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
+        <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/20" onClick={handleLogout}>
+            <LogOut className="mr-3 h-4 w-4" />
             Logout
         </Button>
       </div>

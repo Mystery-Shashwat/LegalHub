@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
+import { Card } from "@/components/ui/card";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function AdminLawyersPage() {
@@ -47,15 +48,15 @@ export default function AdminLawyersPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Lawyer Verifications</h1>
-        <p className="text-muted-foreground">Approve or reject pending lawyer registration requests.</p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Lawyer Verifications</h1>
+        <p className="text-muted-foreground hidden md:block">Approve or reject pending lawyer registration requests.</p>
       </div>
 
       {/* Desktop Table View */}
-      <div className="rounded-md border hidden md:block">
+      <Card className="hidden md:block shadow-sm border-border/50">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Bar Council Info</TableHead>
@@ -120,7 +121,7 @@ export default function AdminLawyersPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {/* Mobile Card View */}
       <div className="grid grid-cols-1 gap-4 md:hidden">

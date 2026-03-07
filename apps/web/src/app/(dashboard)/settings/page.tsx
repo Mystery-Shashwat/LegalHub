@@ -56,13 +56,13 @@ export default function SettingsPage() {
   if (!user) return null;
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account settings and preferences.</p>
+    <div className="space-y-8 max-w-3xl">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Account Settings</h1>
+        <p className="text-muted-foreground hidden md:block">Manage your account settings and preferences.</p>
       </div>
 
-      <Card>
+      <Card className="shadow-sm border-border/50">
         <CardHeader>
           <CardTitle>Profile Details</CardTitle>
           <CardDescription>Update your personal information and email address.</CardDescription>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/20">
+      <Card className="shadow-sm border-destructive/20 mt-8">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>Permanently delete your account and all associated data.</CardDescription>

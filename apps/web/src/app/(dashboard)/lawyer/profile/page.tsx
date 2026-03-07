@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-hot-toast";
 
 const profileSchema = z.object({
@@ -92,14 +93,20 @@ export default function LawyerProfilePage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Public Profile</h1>
-        <p className="text-muted-foreground">Manage how clients see you on LegalHub.</p>
+    <div className="max-w-4xl space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Public Profile</h1>
+        <p className="text-muted-foreground hidden md:block">Manage how clients see you on LegalHub.</p>
       </div>
 
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
+      <Card className="shadow-sm border-border/50">
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+          <CardDescription>Update your professional details, contact information, and specializations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="bio">Professional Bio</Label>
           <Textarea 
@@ -218,7 +225,9 @@ export default function LawyerProfilePage() {
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Saving..." : "Save Changes"}
         </Button>
-      </form>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

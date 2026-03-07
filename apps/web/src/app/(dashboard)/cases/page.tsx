@@ -35,13 +35,13 @@ export default function CasesListPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Cases</h1>
-        <p className="text-muted-foreground">Manage ongoing and past legal matters.</p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">My Cases</h1>
+        <p className="text-muted-foreground hidden md:block">Manage ongoing and past legal matters.</p>
       </div>
 
       {cases.length === 0 ? (
-        <Card>
+        <Card className="shadow-sm border-border/50">
           <CardContent className="py-12 flex flex-col items-center text-center text-muted-foreground">
             <p>You have no active cases.</p>
             {user?.role === "LAWYER" ? (
@@ -54,10 +54,10 @@ export default function CasesListPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {cases.map((c) => (
             <Link key={c.id} href={`/cases/${c.id}`}>
-              <Card className="hover:border-primary transition-colors cursor-pointer h-full flex flex-col">
+              <Card className="shadow-sm border-border/50 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer h-full flex flex-col">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{c.title}</CardTitle>

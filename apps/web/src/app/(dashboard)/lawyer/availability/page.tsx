@@ -92,15 +92,15 @@ export default function LawyerAvailabilityPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Availability & Scheduling</h1>
-        <p className="text-muted-foreground">Set the weekly hours you are available for client consultations.</p>
+    <div className="max-w-4xl space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Availability & Scheduling</h1>
+        <p className="text-muted-foreground hidden md:block">Set the weekly hours you are available for client consultations.</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {slots.map((slot, index) => (
-          <div key={slot.dayOfWeek} className="flex items-center space-x-4 p-4 rounded-lg border bg-card">
+          <div key={slot.dayOfWeek} className="flex items-center space-x-4 p-4 rounded-xl border border-border/50 bg-card shadow-sm hover:shadow-md transition-all">
             <div className="flex items-center space-x-2 w-32">
               <Checkbox 
                 id={`day-${index}`} 

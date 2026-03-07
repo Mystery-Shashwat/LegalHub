@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Calendar, Video, FileText, IndianRupee } from "lucide-react"
 
 interface Booking {
@@ -63,11 +64,11 @@ export default function ClientBookingsPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">My Bookings</h1>
-                    <p className="text-muted-foreground mt-2">View and manage your consultation appointments.</p>
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">My Bookings</h1>
+                    <p className="text-muted-foreground hidden md:block">View and manage your consultation appointments.</p>
                 </div>
                 <Link href="/find-lawyer">
                     <Button>Book New Lawyer</Button>
@@ -75,9 +76,9 @@ export default function ClientBookingsPage() {
             </div>
 
             {/* Desktop Table View */}
-            <div className="border rounded-lg bg-card hidden md:block">
+            <Card className="hidden md:block shadow-sm border-border/50">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/50">
                         <TableRow>
                             <TableHead>Lawyer</TableHead>
                             <TableHead>Date & Time</TableHead>
@@ -143,7 +144,7 @@ export default function ClientBookingsPage() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
+            </Card>
 
             {/* Mobile Card View */}
             <div className="grid grid-cols-1 gap-4 md:hidden">

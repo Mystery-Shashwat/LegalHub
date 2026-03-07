@@ -39,20 +39,22 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Overview of LegalHub platform activity.</p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
+        <p className="text-muted-foreground hidden md:block">Platform metrics and system administration.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.title}>
+          <Card key={c.title} className="shadow-sm border-border/50 bg-card hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{c.title}</CardTitle>
-              <c.icon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">{c.title}</CardTitle>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                 <c.icon className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{c.value}</div>
+              <div className="text-3xl font-bold">{c.value}</div>
             </CardContent>
           </Card>
         ))}

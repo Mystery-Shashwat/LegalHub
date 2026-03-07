@@ -92,11 +92,13 @@ export default function RegisterLawyerPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center py-12 px-4 bg-muted/30">
-        <Card className="w-full max-w-2xl shadow-lg border-muted">
-            <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold tracking-tight">Lawyer Registration</CardTitle>
-            <CardDescription>
+    <div className="flex min-h-screen items-center justify-center py-12 px-4 bg-muted/20 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[500px] bg-primary/5 -skew-y-6 transform origin-top-left -z-10" />
+
+        <Card className="w-full max-w-2xl shadow-2xl border-border/50 bg-card/95 backdrop-blur-sm">
+            <CardHeader className="space-y-1 text-center pb-6 pt-8">
+            <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Lawyer Registration</CardTitle>
+            <CardDescription className="text-base text-muted-foreground">
                 Step {step} of 4: {
                     step === 1 ? 'Personal Details' : 
                     step === 2 ? 'Bar Council & Education' : 

@@ -55,13 +55,13 @@ export default function EarningsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-        <p className="text-muted-foreground">Track your consulting revenue and payout history.</p>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Earnings</h1>
+        <p className="text-muted-foreground hidden md:block">Track your consulting revenue and payout history.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="shadow-sm border-border/50 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available for Payout</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -72,7 +72,7 @@ export default function EarningsPage() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="shadow-sm border-border/50 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Clearance</CardTitle>
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -84,7 +84,7 @@ export default function EarningsPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="shadow-sm border-border/50">
           <CardHeader>
               <CardTitle>Transactions</CardTitle>
               <CardDescription>Recent booking payments and your 90% payout share.</CardDescription>

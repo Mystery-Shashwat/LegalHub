@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useAuth } from "@/store/auth"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
@@ -15,6 +16,23 @@ import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const pathname = usePathname()
+
+  // Hide the global Navbar on dashboard routes, as they have their own sidebar and mobile header
+  const dashboardPrefixes = [
+    '/client/',
+    '/lawyer/',
+    '/admin/',
+    '/cases',
+    '/messages',
+    '/settings'
+  ];
+  
+  const isDashboardRoute = dashboardPrefixes.some(prefix => pathname?.startsWith(prefix));
+
+  if (isDashboardRoute) {
+    return null;
+  }
 
   return (
     <header className="border-b bg-background sticky top-0 z-50">

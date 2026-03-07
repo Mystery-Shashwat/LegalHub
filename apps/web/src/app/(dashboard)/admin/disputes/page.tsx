@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { toast } from "react-hot-toast"
 
 interface Dispute {
@@ -69,16 +70,16 @@ export default function AdminDisputesPage() {
     if (loading) return <div className="p-8">Loading disputes...</div>;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Disputes</h1>
-                <p className="text-muted-foreground mt-2">Manage and resolve user disputes and complaints.</p>
+        <div className="space-y-8">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Disputes</h1>
+                <p className="text-muted-foreground hidden md:block">Manage and resolve user disputes and complaints.</p>
             </div>
 
             {/* Desktop Table View */}
-            <div className="border rounded-lg bg-card hidden md:block">
+            <Card className="hidden md:block shadow-sm border-border/50">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/50">
                         <TableRow>
                             <TableHead>User / Role</TableHead>
                             <TableHead>Reason</TableHead>
@@ -130,7 +131,7 @@ export default function AdminDisputesPage() {
                         )}
                     </TableBody>
                 </Table>
-            </div>
+            </Card>
 
             {/* Mobile Card View */}
             <div className="grid grid-cols-1 gap-4 md:hidden">

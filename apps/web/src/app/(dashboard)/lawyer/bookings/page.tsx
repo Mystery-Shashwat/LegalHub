@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { format } from "date-fns";
+import { Card } from "@/components/ui/card";
 
 interface Booking {
   id: string;
@@ -47,15 +48,15 @@ export default function LawyerBookingsPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Manage Bookings</h1>
-        <p className="text-muted-foreground">View and update your upcoming client consultations.</p>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Manage Bookings</h1>
+        <p className="text-muted-foreground hidden md:block">View and update your upcoming client consultations.</p>
       </div>
 
-      <div className="rounded-md border">
+      <Card className="shadow-sm border-border/50">
         {bookings.length === 0 ? (
-           <div className="p-8 text-center text-muted-foreground">No bookings found.</div>
+           <div className="p-12 text-center text-muted-foreground">No bookings found.</div>
         ) : (
              <div className="divide-y">
                 {bookings.map((booking) => (
@@ -88,7 +89,7 @@ export default function LawyerBookingsPage() {
                 ))}
              </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
