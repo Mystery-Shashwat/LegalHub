@@ -13,10 +13,12 @@ import {
   SheetDescription
 } from "@/components/ui/sheet"
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import { useState } from "react"
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
 
   // Hide the global Navbar on dashboard routes, as they have their own sidebar and mobile header
   const dashboardPrefixes = [
@@ -48,7 +50,7 @@ export default function Navbar() {
         </nav>
 
         {/* Mobile Nav */}
-        <Sheet>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-5 w-5" />
@@ -61,9 +63,9 @@ export default function Navbar() {
               <SheetDescription>Main navigation links for LegalHub</SheetDescription>
             </VisuallyHidden>
             <nav className="flex flex-col gap-4 mt-8">
-              <Link href="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How it Works</Link>
-              <Link href="/blog" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
-              <Link href="/find-lawyer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Find a Lawyer</Link>
+              <Link href="/how-it-works" onClick={() => setIsOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How it Works</Link>
+              <Link href="/blog" onClick={() => setIsOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
+              <Link href="/find-lawyer" onClick={() => setIsOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Find a Lawyer</Link>
             </nav>
           </SheetContent>
         </Sheet>

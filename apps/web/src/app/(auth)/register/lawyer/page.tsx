@@ -27,7 +27,9 @@ const lawyerSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
   barCouncilNumber: z.string().min(3, "Bar council number is required"),
   barCouncilState: z.string().min(2, "Bar council state is required"),
-  enrollmentYear: z.coerce.number().int().min(1950).max(new Date().getFullYear()),
+  enrollmentYear: z.string().min(4, "Enrollment date is required")
+    .transform(val => new Date(val).getFullYear())
+    .pipe(z.number().min(1950).max(new Date().getFullYear())),
   specializations: z.string().min(2, "Comma-separated specializations required"),
   courtsOfPractice: z.string().min(2, "Comma-separated courts required"),
   experienceYears: z.coerce.number().int().min(0, "Must be 0 or more"),
@@ -37,7 +39,10 @@ const lawyerSchema = z.object({
   hourlyRate: z.coerce.number().min(500, "Minimum rate is ₹500"),
   bio: z.string().max(500, "Bio max 500 characters").optional(),
   degreeCollege: z.string().optional(),
-  degreeYear: z.coerce.number().int().optional(),
+  degreeYear: z.union([
+    z.string().length(0).transform(() => undefined),
+    z.string().min(4).transform(val => new Date(val).getFullYear()).pipe(z.number().int())
+  ]).optional(),
   freeConsultation: z.boolean().default(false),
   freeConsultMinutes: z.coerce.number().default(0),
   linkedinUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
@@ -55,7 +60,7 @@ export default function RegisterLawyerPage() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<Record<string, unknown>>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<Record<string, unknown>>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(lawyerSchema) as any,
     defaultValues: {
@@ -63,6 +68,22 @@ export default function RegisterLawyerPage() {
         freeConsultMinutes: 0
     }
   })
+
+  const handleNextStep = async () => {
+    let fieldsToValidate: string[] = [];
+    if (step === 1) {
+       fieldsToValidate = ['name', 'email', 'phone', 'password'];
+    } else if (step === 2) {
+       fieldsToValidate = ['barCouncilNumber', 'barCouncilState', 'profilePhotoUrl', 'certificateOfPracticeUrl', 'degreeDocumentUrl', 'govtIdUrl', 'enrollmentYear', 'experienceYears', 'degreeCollege', 'degreeYear'];
+    } else if (step === 3) {
+       fieldsToValidate = ['specializations', 'courtsOfPractice', 'city', 'state', 'languages'];
+    }
+
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) {
+       setStep(s => s + 1);
+    }
+  }
 
   const onSubmit = async (data: LawyerForm) => {
     setIsLoading(true)
@@ -175,8 +196,8 @@ export default function RegisterLawyerPage() {
                             {errors.govtIdUrl && <p className="text-xs text-destructive">{errors.govtIdUrl.message as string}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="enrollmentYear">Enrollment Year</Label>
-                            <Input id="enrollmentYear" type="number" placeholder="2010" {...register("enrollmentYear")} />
+                            <Label htmlFor="enrollmentYear">Enrollment Month & Year</Label>
+                            <Input id="enrollmentYear" type="month" {...register("enrollmentYear")} />
                             {errors.enrollmentYear && <p className="text-xs text-destructive">{errors.enrollmentYear.message as string}</p>}
                         </div>
                         <div className="space-y-2">
@@ -190,8 +211,8 @@ export default function RegisterLawyerPage() {
                             {errors.degreeCollege && <p className="text-xs text-destructive">{errors.degreeCollege.message as string}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="degreeYear">Graduation Year (Optional)</Label>
-                            <Input id="degreeYear" type="number" placeholder="2009" {...register("degreeYear")} />
+                            <Label htmlFor="degreeYear">Graduation Month & Year (Optional)</Label>
+                            <Input id="degreeYear" type="month" {...register("degreeYear")} />
                             {errors.degreeYear && <p className="text-xs text-destructive">{errors.degreeYear.message as string}</p>}
                         </div>
                     </div>
@@ -276,11 +297,11 @@ export default function RegisterLawyerPage() {
                 </Button>
                 
                 {step < 4 ? (
-                    <Button type="button" onClick={() => setStep(step + 1)}>
+                    <Button type="button" onClick={handleNextStep}>
                         Next Step
                     </Button>
                 ) : (
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" onClick={() => trigger()} disabled={isLoading}>
                          {isLoading ? "Submitting..." : "Complete Registration"}
                     </Button>
                 )}
