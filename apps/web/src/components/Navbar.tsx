@@ -8,7 +8,10 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetTitle,
+  SheetDescription
 } from "@/components/ui/sheet"
+import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -35,6 +38,10 @@ export default function Navbar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[250px] sm:w-[300px]">
+            <VisuallyHidden>
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>Main navigation links for LegalHub</SheetDescription>
+            </VisuallyHidden>
             <nav className="flex flex-col gap-4 mt-8">
               <Link href="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How it Works</Link>
               <Link href="/blog" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Blog</Link>

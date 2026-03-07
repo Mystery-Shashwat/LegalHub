@@ -58,6 +58,7 @@ const lawyerSchema = z.object({
   certificateOfPracticeUrl: z.string().url().optional(),
   degreeDocumentUrl: z.string().url().optional(),
   govtIdUrl:         z.string().url().optional(),
+  profilePhotoUrl:   z.string().url().optional(),
 })
 
 authRouter.post('/register/lawyer', async (req, res) => {

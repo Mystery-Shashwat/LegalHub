@@ -1,8 +1,9 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-72">
+               <VisuallyHidden>
+                 <SheetTitle>Dashboard Sidebar</SheetTitle>
+                 <SheetDescription>Navigation links for user dashboard</SheetDescription>
+               </VisuallyHidden>
                <Sidebar className="border-none" />
             </SheetContent>
           </Sheet>

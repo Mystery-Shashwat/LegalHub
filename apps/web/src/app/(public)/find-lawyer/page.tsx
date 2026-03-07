@@ -48,7 +48,7 @@ export default function FindLawyerPage() {
     // Add small debounce to avoid spamming the backend while typing
     const timer = setTimeout(() => {
         fetchLawyers();
-    }, 300);
+    }, 500);
     
     return () => clearTimeout(timer);
   }, [query])

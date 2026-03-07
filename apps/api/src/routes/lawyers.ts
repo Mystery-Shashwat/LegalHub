@@ -28,7 +28,20 @@ lawyerRouter.get("/", async (req, res) => {
 
         const lawyers = await prisma.lawyerProfile.findMany({
             where: filter,
-            include: { user: { select: { name: true, avatar: true } } }
+            take: 50,
+            select: {
+                id: true,
+                specializations: true,
+                experienceYears: true,
+                city: true,
+                state: true,
+                languages: true,
+                hourlyRate: true,
+                avgRating: true,
+                totalReviews: true,
+                freeConsultation: true,
+                user: { select: { name: true, avatar: true } }
+            }
         });
 
         res.json({ lawyers });
