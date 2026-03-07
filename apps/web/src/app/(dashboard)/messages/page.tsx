@@ -175,8 +175,8 @@ export default function MessagesPage() {
                             const isMe = m.senderId === user?.id;
                             return (
                                 <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[70%] rounded-lg p-3 ${isMe ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none'}`}>
-                                        <p className="text-sm">{m.content}</p>
+                                    <div className={`max-w-[70%] rounded-lg p-3 overflow-hidden ${isMe ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none'}`}>
+                                        <p className="text-sm break-all whitespace-pre-wrap">{m.content}</p>
                                         <p className="text-[10px] opacity-70 mt-1 text-right">
                                             {format(new Date(m.createdAt), "h:mm a")}
                                         </p>
