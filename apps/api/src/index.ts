@@ -14,6 +14,10 @@ import { caseRouter }     from './routes/cases'
 import { messageRouter }  from './routes/messages'
 import { uploadRouter }   from './routes/uploads'
 import { adminRouter }    from './routes/admin'
+import { aiRouter }       from './routes/ai'
+import { signatureRouter } from './routes/signatures'
+import { forumRouter }    from './routes/forum'
+import { rtiRouter }      from './routes/rti'
 import { setupSocket }    from './services/socket'
 import { rateLimiter }    from './middleware/rateLimit'
 
@@ -37,6 +41,10 @@ app.use('/api/cases',    caseRouter)
 app.use('/api/messages', messageRouter)
 app.use('/api/uploads',  uploadRouter)
 app.use('/api/admin',    adminRouter)
+app.use('/api/ai',       aiRouter)
+app.use('/api/signatures', signatureRouter)
+app.use('/api/forum',      forumRouter)
+app.use('/api/rti',        rtiRouter)
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }))
 
 setupSocket(io)

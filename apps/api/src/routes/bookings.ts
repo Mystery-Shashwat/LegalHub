@@ -1,4 +1,5 @@
 import { Router } from "express";
+import fetch from "node-fetch";
 import { requireAuth, requireClient } from "../middleware/guards";
 import { prisma } from "../lib/prisma";
 import { z } from "zod";
@@ -115,6 +116,73 @@ bookingRouter.put("/:id/status", requireAuth, async (req: AuthRequest, res: Resp
         res.json({ message: "Booking updated", booking: updated });
     } catch (error) {
         console.error("Update booking status error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 4. Get or Create Video Room (Daily.co)
+bookingRouter.get("/:id/room", requireAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const booking = await prisma.booking.findUnique({ where: { id }, include: { lawyer: true } });
+        
+        if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+        // Auth checks: Only the client or the lawyer for this booking can access the room
+        const isClient = req.user!.role === "CLIENT" && booking.clientId === req.user!.userId;
+        const isLawyer = req.user!.role === "LAWYER" && booking.lawyer.userId === req.user!.userId;
+        
+        if (!isClient && !isLawyer) {
+            return res.status(403).json({ error: "Unauthorized to join this video room." });
+        }
+
+        if (booking.type !== "video") {
+            return res.status(400).json({ error: "This is not a video booking." });
+        }
+
+        const DAILY_API_KEY = process.env.DAILY_API_KEY;
+        if (!DAILY_API_KEY || DAILY_API_KEY === "your_daily_api_key_here") {
+            return res.status(503).json({ error: "Video service unavailable. Please configure DAILY_API_KEY." });
+        }
+
+        // Room name should be unique to the booking ID for idempotency
+        const roomName = `legalhub-booking-${booking.id}`;
+
+        // Attempt to create the room
+        const response = await fetch("https://api.daily.co/v1/rooms", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${DAILY_API_KEY}`,
+            },
+            body: JSON.stringify({
+                name: roomName,
+                properties: {
+                    exp: Math.floor(Date.now() / 1000) + 86400, // Expires in 24 hours
+                    enable_chat: true,
+                },
+            }),
+        });
+
+        const roomData = await response.json() as any;
+
+        if (response.ok) {
+            return res.json({ url: roomData.url });
+        } else if (response.status === 400 && roomData.error === "invalid-request-error") {
+             // Room likely already exists, we can fetch it (or construct the URL if we know the domain)
+             const DAILY_DOMAIN = process.env.DAILY_DOMAIN;
+             if(DAILY_DOMAIN && DAILY_DOMAIN !== "your_daily_domain_here") {
+                 return res.json({ url: `https://${DAILY_DOMAIN}.daily.co/${roomName}` });
+             } else {
+                  return res.status(500).json({ error: "Room exists but DAILY_DOMAIN is not configured properly." });
+             }
+        } else {
+             console.error("Daily.co error:", roomData);
+             return res.status(500).json({ error: "Failed to create video room" });
+        }
+
+    } catch (error) {
+        console.error("Get video room error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });

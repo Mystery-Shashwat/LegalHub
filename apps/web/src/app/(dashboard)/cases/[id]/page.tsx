@@ -8,8 +8,9 @@ import { useAuth } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, UploadCloud } from "lucide-react";
+import { FileText, Download, UploadCloud, CheckCircle2 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import ESignCanvas from "@/components/ESignCanvas";
 
 export default function CaseDetailPage() {
   const { id } = useParams();
@@ -139,11 +140,25 @@ export default function CaseDetailPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                            <Download className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                                        </a>
-                                    </Button>
+                                    <div className="flex items-center space-x-2">
+                                        {doc.signatureHash ? (
+                                            <Badge variant="outline" className="text-emerald-500 border-emerald-200 bg-emerald-50/50">
+                                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                                Signed {format(new Date(doc.signedAt), "MMM d, yyyy")}
+                                            </Badge>
+                                        ) : (
+                                            <ESignCanvas 
+                                                documentId={doc.id} 
+                                                documentName={doc.name} 
+                                                onSuccess={loadCase} 
+                                            />
+                                        )}
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                <Download className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                            </a>
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
