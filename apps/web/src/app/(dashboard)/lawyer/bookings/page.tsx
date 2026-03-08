@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
+import { VideoRoom } from "@/components/VideoRoom";
+import { Video, ChevronLeft } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -18,6 +20,8 @@ interface Booking {
 export default function LawyerBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchBookings() {
@@ -46,6 +50,41 @@ export default function LawyerBookingsPage() {
   };
 
   if (loading) return <div>Loading...</div>;
+
+  const joinVideoRoom = async (bookingId: string) => {
+      setJoiningId(bookingId);
+      try {
+          const { data } = await api.get(`/bookings/${bookingId}/room`);
+          if (data.url) {
+              setActiveVideoUrl(data.url);
+          } else {
+              toast.error("Room URL not generated");
+          }
+      } catch (error) {
+          console.error("Error joining video room:", error);
+          const err = error as { response?: { data?: { error?: string } } };
+          toast.error(err.response?.data?.error || "Could not join video room");
+      } finally {
+          setJoiningId(null);
+      }
+  };
+
+  if (activeVideoUrl) {
+       return (
+          <div className="max-w-5xl mx-auto space-y-4">
+               <div>
+                  <Button variant="ghost" onClick={() => setActiveVideoUrl(null)} className="mb-4 -ml-4">
+                      <ChevronLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+                  </Button>
+                 <h1 className="text-2xl font-bold tracking-tight">Active Consultation</h1>
+                 <p className="text-muted-foreground flex items-center gap-2">
+                     <Video className="w-4 h-4 text-green-500 animate-pulse" /> Live Session
+                 </p>
+               </div>
+               <VideoRoom url={activeVideoUrl} onLeave={() => setActiveVideoUrl(null)} />
+          </div>
+       );
+  }
 
   return (
     <div className="space-y-8">
@@ -82,7 +121,20 @@ export default function LawyerBookingsPage() {
                                 </>
                              )}
                               {booking.status === "CONFIRMED" && (
-                                  <Button size="sm" variant="outline" onClick={() => updateStatus(booking.id, "COMPLETED")}>Mark Completed</Button>
+                                <>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => joinVideoRoom(booking.id)}
+                                    disabled={joiningId === booking.id}
+                                  >
+                                    <Video className="w-4 h-4 mr-2" />
+                                    {joiningId === booking.id ? "Joining..." : "Join"}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => updateStatus(booking.id, "COMPLETED")}>
+                                      Mark Completed
+                                  </Button>
+                                </>
                               )}
                         </div>
                     </div>

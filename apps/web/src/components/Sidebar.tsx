@@ -42,6 +42,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Profile", href: "/lawyer/profile", icon: User },
     { title: "Cases", href: "/cases", icon: FileText },
     { title: "Messages", href: "/messages", icon: MessageSquare },
+    { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
 
@@ -50,6 +51,8 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "My Bookings", href: "/client/bookings", icon: Calendar },
     { title: "My Cases", href: "/cases", icon: FileText },
     { title: "Messages", href: "/messages", icon: MessageSquare },
+    { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
+    { title: "RTI Tool", href: "/rti", icon: FileText },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
 

@@ -6,6 +6,9 @@ import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import api from "@/lib/api";
 import PaymentModal from "@/components/PaymentModal";
+import { VideoRoom } from "@/components/VideoRoom";
+import { Video } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Booking {
   id: string;
@@ -22,6 +25,8 @@ export default function ClientBookingConfirmationPage() {
   
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isJoiningRoom, setIsJoiningRoom] = useState(false);
 
   useEffect(() => {
     async function fetchBooking() {
@@ -52,6 +57,39 @@ export default function ClientBookingConfirmationPage() {
 
   if (loading) return <div>Loading...</div>;
   if (!booking) return <div>Booking not found</div>;
+
+  const handleJoinVideo = async () => {
+    setIsJoiningRoom(true);
+    try {
+      const { data } = await api.get(`/bookings/${booking.id}/room`);
+      if (data.url) {
+        setVideoUrl(data.url);
+      } else {
+        toast.error("Video room not ready yet.");
+      }
+    } catch (error) {
+        console.error("Error fetching video room:", error);
+        const err = error as { response?: { data?: { error?: string } } };
+        toast.error(err.response?.data?.error || "Failed to get video room link");
+    } finally {
+        setIsJoiningRoom(false);
+    }
+  };
+
+  if (videoUrl) {
+      return (
+          <div className="max-w-4xl mx-auto p-4 space-y-4">
+               <div>
+                 <h1 className="text-2xl font-bold tracking-tight">Active Consultation</h1>
+                 <p className="text-muted-foreground flex items-center gap-2">
+                     <Video className="w-4 h-4 text-green-500" />
+                     In session with {booking.lawyer.user.name}
+                 </p>
+               </div>
+               <VideoRoom url={videoUrl} onLeave={() => setVideoUrl(null)} />
+          </div>
+      );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 p-4">
@@ -98,6 +136,16 @@ export default function ClientBookingConfirmationPage() {
                 </span>
             )}
         </div>
+        
+        {/* Join Video Button for Confirmed/Paid bookings */}
+        {booking.status === "CONFIRMED" && (
+            <div className="pt-4 border-t flex justify-end">
+                <Button onClick={handleJoinVideo} disabled={isJoiningRoom} className="w-full sm:w-auto">
+                    <Video className="w-4 h-4 mr-2" />
+                    {isJoiningRoom ? "Connecting..." : "Join Video Consultation"}
+                </Button>
+            </div>
+        )}
       </div>
     </div>
   );

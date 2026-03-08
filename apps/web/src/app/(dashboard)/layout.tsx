@@ -2,6 +2,7 @@
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
+import { AIAssistant } from "@/components/AIAssistant";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, Search, Bell, Mail, Scale } from "lucide-react";
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </main>
         </div>
       </div>
+      <AIAssistant />
     </ProtectedRoute>
   );
 }
