@@ -3,9 +3,10 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { AIAssistant } from "@/components/AIAssistant";
+import NotificationBell from "@/components/NotificationBell";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, Bell, Mail, Scale } from "lucide-react";
+import { Menu, Search, Mail, Scale } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { useState } from "react";
@@ -53,9 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                </div>
                <div className="flex items-center gap-2 md:gap-4 text-muted-foreground">
-                  <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-full">
-                     <Bell className="h-5 w-5" />
-                  </Button>
+                  <NotificationBell />
                   <Button variant="ghost" size="icon" className="hidden sm:inline-flex rounded-full">
                      <Mail className="h-5 w-5" />
                   </Button>

@@ -28,3 +28,15 @@ export async function sendLawyerRejected(to: string, name: string, reason: strin
     html:    `<p>Hi ${name}, your verification needs attention: <b>${reason}</b></p>`
   })
 }
+
+export async function sendPasswordReset(to: string, name: string, resetUrl: string) {
+  await resend.emails.send({
+    from:    'LegalHub <noreply@legalhub.in>',
+    to,
+    subject: 'Reset your LegalHub password',
+    html:    `<p>Hi ${name},</p>
+              <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+              <p><a href="${resetUrl}" style="background:#6d28d9;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Reset Password</a></p>
+              <p>If you did not request this, please ignore this email.</p>`
+  })
+}

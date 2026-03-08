@@ -8,9 +8,11 @@ interface AuthStore {
   user: User | null
   token: string | null
   isLoading: boolean
+  _hasHydrated: boolean
   login:    (email: string, pass: string) => Promise<string>
   logout:   () => void
   setUser:  (u: User) => void
+  setHasHydrated: (state: boolean) => void
 }
 
 export const useAuth = create<AuthStore>()(
@@ -18,6 +20,7 @@ export const useAuth = create<AuthStore>()(
     user: null,
     token: null,
     isLoading: false,
+    _hasHydrated: false,
 
     login: async (email, password) => {
       set({ isLoading: true })
@@ -37,6 +40,14 @@ export const useAuth = create<AuthStore>()(
       window.location.href = '/'
     },
 
-    setUser: (u) => set({ user: u })
-  }), { name: 'auth', storage: createJSONStorage(() => sessionStorage), partialize: (s) => ({ user: s.user, token: s.token }) })
+    setUser: (u) => set({ user: u }),
+    setHasHydrated: (state) => set({ _hasHydrated: state }),
+  }), {
+    name: 'auth',
+    storage: createJSONStorage(() => sessionStorage),
+    partialize: (s) => ({ user: s.user, token: s.token }),
+    onRehydrateStorage: () => (state) => {
+      state?.setHasHydrated(true)
+    }
+  })
 )

@@ -4,6 +4,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
+import { processReferralReward } from "../lib/referrals";
 
 export const paymentRouter = Router();
 
@@ -104,6 +105,9 @@ paymentRouter.post("/verify", requireAuth, async (req: Request, res: Response) =
                   paidAt: new Date()
               }
           });
+          
+          // Trigger referral reward for first paid booking
+          await processReferralReward(bookingRecord.clientId, 500, "First Booking Completed");
       }
       res.json({ success: true, message: "Payment verified successfully" });
     } else {
@@ -112,5 +116,118 @@ paymentRouter.post("/verify", requireAuth, async (req: Request, res: Response) =
   } catch (error) {
     console.error("Payment Verification Error:", error);
     res.status(500).json({ error: "Verification failed" });
+  }
+});
+
+// GET /payments/invoices — client's own invoice history
+paymentRouter.get("/invoices", requireAuth, async (req: any, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [payments, total] = await Promise.all([
+      prisma.payment.findMany({
+        where: { booking: { clientId: req.user.userId } },
+        include: {
+          booking: {
+            include: {
+              client: { select: { name: true, email: true } },
+              lawyer: {
+                include: { user: { select: { name: true } } }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.payment.count({ where: { booking: { clientId: req.user.userId } } })
+    ]);
+
+    res.json({ payments, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    console.error("Invoice list error:", error);
+    res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+});
+
+// GET /payments/:id — single payment details (invoice)
+paymentRouter.get("/:id", requireAuth, async (req: any, res: Response) => {
+  try {
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.id },
+      include: {
+        booking: {
+          include: {
+            client: { select: { name: true, email: true, phone: true } },
+            lawyer: { include: { user: { select: { name: true, email: true } } } }
+          }
+        }
+      }
+    });
+
+    if (!payment) return res.status(404).json({ error: "Payment not found" });
+
+    // Only the client, lawyer, or admin can view
+    const isClient  = payment.booking.clientId === req.user.userId;
+    const isLawyer  = payment.booking.lawyer.userId === req.user.userId;
+    const isAdmin   = req.user.role === "ADMIN";
+    if (!isClient && !isLawyer && !isAdmin) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    res.json({ payment });
+  } catch (error) {
+    console.error("Payment detail error:", error);
+    res.status(500).json({ error: "Failed to fetch payment" });
+  }
+});
+
+// POST /payments/:id/refund — admin initiates refund
+paymentRouter.post("/:id/refund", requireAuth, async (req: any, res: Response) => {
+  try {
+    if (req.user.role !== "ADMIN") {
+      return res.status(403).json({ error: "Admin only" });
+    }
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.id },
+      include: { booking: true }
+    });
+
+    if (!payment) return res.status(404).json({ error: "Payment not found" });
+    if (payment.status === "REFUNDED") return res.status(400).json({ error: "Already refunded" });
+    if (payment.status !== "PAID") return res.status(400).json({ error: "Can only refund completed payments" });
+
+    // In production, call razorpay.payments.refund(razorpayPaymentId, { amount })
+    // For now mark as REFUNDED in DB
+    const [updatedPayment] = await prisma.$transaction([
+      prisma.payment.update({
+        where: { id: req.params.id },
+        data: { status: "REFUNDED" }
+      }),
+      prisma.booking.update({
+        where: { id: payment.bookingId },
+        data: { status: "CANCELLED" }
+      })
+    ]);
+
+    // Notify the client
+    await prisma.notification.create({
+      data: {
+        userId: payment.booking.clientId,
+        type: "PAYMENT",
+        title: "Refund Processed",
+        body: `Your refund of ₹${payment.amount} has been initiated. It will reflect in 5-7 business days.`,
+        link: "/client/bookings"
+      }
+    });
+
+    res.json({ message: "Refund initiated successfully", payment: updatedPayment });
+  } catch (error) {
+    console.error("Refund error:", error);
+    res.status(500).json({ error: "Failed to process refund" });
   }
 });

@@ -13,7 +13,11 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Scale
+  Scale,
+  ShoppingCart,
+  Gift,
+  IndianRupee,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
@@ -40,11 +44,15 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Bookings", href: "/lawyer/bookings", icon: Calendar },
     { title: "Availability", href: "/lawyer/availability", icon: Clock },
     { title: "Profile", href: "/lawyer/profile", icon: User },
+    { title: "Earnings", href: "/lawyer/earnings", icon: IndianRupee },
+    { title: "Analytics", href: "/lawyer/analytics", icon: TrendingUp },
     { title: "Cases", href: "/cases", icon: FileText },
     { title: "Messages", href: "/messages", icon: MessageSquare },
     { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
+    { title: "Templates", href: "/templates", icon: FileText },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
+
 
   const clientLinks = [
     { title: "Dashboard", href: "/client/dashboard", icon: BarChart3 },
@@ -53,6 +61,9 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Messages", href: "/messages", icon: MessageSquare },
     { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
     { title: "RTI Tool", href: "/rti", icon: FileText },
+    { title: "Templates", href: "/templates", icon: ShoppingCart },
+    { title: "My Purchases", href: "/client/purchases", icon: FileText },
+    { title: "Refer & Earn", href: "/referrals", icon: Gift },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
 

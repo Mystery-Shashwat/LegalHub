@@ -27,7 +27,12 @@ export default function Navbar() {
     '/admin/',
     '/cases',
     '/messages',
-    '/settings'
+    '/settings',
+    '/forum',
+    '/templates',
+    '/rti',
+    '/referrals',
+    '/signatures',
   ];
   
   const isDashboardRoute = dashboardPrefixes.some(prefix => pathname?.startsWith(prefix));

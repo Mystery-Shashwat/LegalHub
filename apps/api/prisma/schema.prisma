@@ -75,6 +75,19 @@ model User {
   forumQuestions   ForumQuestion[]  @relation("UserQuestions")
   forumAnswers     ForumAnswer[]    @relation("UserAnswers")
   rtiApplications  RTIApplication[] @relation("UserRTIs")
+  templatePurchases TemplatePurchase[]
+
+  // Referrals
+  referralCode     String   @unique @default(cuid())
+  referredById     String?
+  referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]   @relation("UserReferrals")
+  walletBalance    Float    @default(0)
+  referralRewards  ReferralReward[] @relation("RewardReferrer")
+  notifications    Notification[]   @relation("UserNotifications")
+  passwordResets   PasswordReset[]  @relation("UserPasswordResets")
+  blogs            Blog[]           @relation("UserBlogs")
+  blogComments     BlogComment[]    @relation("UserBlogComments")
 }
 
 // ─── CLIENT PROFILE ───────────────────────────
@@ -203,6 +216,7 @@ model Review {
   lawyer          LawyerProfile @relation("LawyerReviews", fields: [lawyerProfileId], references: [id])
   rating          Int           // 1–5
   comment         String?
+  lawyerReply     String?       // lawyer's public reply to the review
   createdAt       DateTime      @default(now())
 }
 
@@ -309,4 +323,110 @@ model RTIApplication {
   documentUrl     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// ─── DOCUMENT TEMPLATES ────────────────────────
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  category    String   // "Business", "Real Estate", "Personal"
+  fileUrl     String   // Link to the actual template file
+  previewUrl  String?  // Blurred preview image
+  downloads   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchases   TemplatePurchase[]
+}
+
+model TemplatePurchase {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  templateId  String
+  template    DocumentTemplate @relation(fields: [templateId], references: [id])
+  amountPaid  Float
+  status      PaymentStatus @default(PENDING)
+  paymentId   String?
+  createdAt   DateTime @default(now())
+}
+
+// ─── REFERRALS ─────────────────────────────────
+model ReferralReward {
+  id              String   @id @default(cuid())
+  referrerId      String
+  referrer        User     @relation("RewardReferrer", fields: [referrerId], references: [id])
+  referredUserId  String   @unique // only one reward per referred user
+  amount          Float
+  reason          String
+  createdAt       DateTime @default(now())
+}
+
+// ─── NOTIFICATIONS ─────────────────────────────
+enum NotifType {
+  BOOKING
+  PAYMENT
+  MESSAGE
+  CASE
+  REVIEW
+  REFERRAL
+  SYSTEM
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotifType @default(SYSTEM)
+  title     String
+  body      String
+  isRead    Boolean   @default(false)
+  link      String?   // e.g. /client/bookings/cly123
+  createdAt DateTime  @default(now())
+  @@index([userId, isRead])
+}
+
+// ─── PASSWORD RESET ────────────────────────────
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserPasswordResets", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+// ─── BLOG ──────────────────────────────────────
+model Blog {
+  id          String   @id @default(cuid())
+  authorId    String
+  author      User     @relation("UserBlogs", fields: [authorId], references: [id])
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String   @db.Text
+  category    String   @default("Legal Insights")
+  tags        String[]
+  coverImage  String?
+  isPublished Boolean  @default(false)
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  comments    BlogComment[]
+  @@index([slug])
+  @@index([isPublished, createdAt])
+}
+
+model BlogComment {
+  id        String   @id @default(cuid())
+  blogId    String
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("UserBlogComments", fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 }

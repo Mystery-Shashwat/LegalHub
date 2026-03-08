@@ -24,6 +24,7 @@ const clientSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
+  referralCode: z.string().optional(),
 })
 
 type ClientForm = z.infer<typeof clientSchema>
@@ -91,6 +92,12 @@ export default function RegisterClientPage() {
                 <Label htmlFor="password" className="font-semibold">Password</Label>
                 <Input id="password" type="password" placeholder="••••••••" className="h-12 bg-background" {...register("password")} />
                 {errors.password && <p className="text-sm text-destructive font-medium">{errors.password.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                <Label htmlFor="referralCode" className="font-semibold">Referral Code (Optional)</Label>
+                <Input id="referralCode" placeholder="Enter code if you have one" className="h-12 bg-background flex" {...register("referralCode")} />
+                {errors.referralCode && <p className="text-sm text-destructive font-medium">{errors.referralCode.message}</p>}
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-6 pb-8">
