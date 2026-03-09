@@ -76,7 +76,7 @@ export default function MessagesPage() {
     if (!token) return;
     
     // Process env URL has `/api` at the end, but socket needs the host root
-    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3001/api").replace(/\/api$/, "");
     
     socketRef.current = io(socketUrl, {
         auth: { token }

@@ -31,10 +31,14 @@ import { rateLimiter }    from './middleware/rateLimit'
 dotenv.config()
 const app    = express()
 const server = createServer(app)
-const io     = new Server(server, { cors: { origin: process.env.FRONTEND_URL } })
+
+// Sanitize FRONTEND_URL to remove trailing slashes (CORS requirement)
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '') || 'http://localhost:3000'
+
+const io     = new Server(server, { cors: { origin: frontendUrl } })
 
 app.use(helmet())
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
+app.use(cors({ origin: frontendUrl, credentials: true }))
 app.use(express.json({ limit: '5mb' }))
 app.use('/api', rateLimiter)
 
