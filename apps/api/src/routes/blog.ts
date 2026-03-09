@@ -13,16 +13,33 @@ function slugify(title: string): string {
     .trim()
 }
 
-// GET /blog — public listing of published posts
+// GET /blog — public listing or management listing
 blogRouter.get('/', async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1
     const limit = parseInt(req.query.limit) || 10
     const category = req.query.category as string | undefined
+    const authorId = req.query.authorId as string | undefined
     const skip = (page - 1) * limit
 
-    const where: any = { isPublished: true }
+    // If authorId is provided, we check if the requester is that author or an admin
+    // to determine if we should show drafts as well.
+    let showAll = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authorId) {
+        try {
+            const { verifyAccess } = await import('../lib/tokens');
+            const user = verifyAccess(authHeader.split(' ')[1]);
+            if (user && (user.userId === authorId || user.role === 'ADMIN')) {
+                showAll = true;
+            }
+        } catch (e) {}
+    }
+
+    const where: any = {}
+    if (!showAll) where.isPublished = true
     if (category) where.category = category
+    if (authorId) where.authorId = authorId
 
     const [posts, total] = await Promise.all([
       prisma.blog.findMany({
@@ -39,6 +56,7 @@ blogRouter.get('/', async (req: any, res: any) => {
           tags: true,
           coverImage: true,
           views: true,
+          isPublished: true,
           createdAt: true,
           author: { select: { name: true, avatar: true } },
           _count: { select: { comments: true } }
@@ -47,7 +65,6 @@ blogRouter.get('/', async (req: any, res: any) => {
       prisma.blog.count({ where })
     ])
 
-    // Get all unique categories
     const categories = await prisma.blog.findMany({
       where: { isPublished: true },
       select: { category: true },
@@ -75,7 +92,21 @@ blogRouter.get('/:slug', async (req: any, res: any) => {
       }
     })
 
-    if (!post || !post.isPublished) return res.status(404).json({ error: 'Article not found' })
+    if (!post) return res.status(404).json({ error: 'Article not found' })
+    
+    // If not published, only author or admin can see
+    if (!post.isPublished) {
+        const authHeader = req.headers.authorization;
+        let canSee = false;
+        if (authHeader) {
+            try {
+                const { verifyAccess } = await import('../lib/tokens');
+                const user = verifyAccess(authHeader.split(' ')[1]);
+                if (user && (user.userId === post.authorId || user.role === 'ADMIN')) canSee = true;
+            } catch (e) {}
+        }
+        if (!canSee) return res.status(403).json({ error: 'This post is not published' });
+    }
 
     // Increment view count (fire and forget)
     prisma.blog.update({ where: { slug: req.params.slug }, data: { views: { increment: 1 } } }).catch(() => {})
@@ -87,7 +118,24 @@ blogRouter.get('/:slug', async (req: any, res: any) => {
   }
 })
 
-// POST /blog — lawyer creates a blog post
+// GET /blog-details/:id — for editor
+blogRouter.get('/details/:id', requireAuth, async (req: any, res: any) => {
+    try {
+        const post = await prisma.blog.findUnique({ where: { id: req.params.id } });
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+        
+        if (post.authorId !== req.user.userId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        
+        res.json({ post });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// POST /blog — lawyer/admin creates a blog post
 blogRouter.post('/', requireAuth, async (req: any, res: any) => {
   try {
     const { title, excerpt, content, category, tags, coverImage, isPublished } = req.body
@@ -97,7 +145,6 @@ blogRouter.post('/', requireAuth, async (req: any, res: any) => {
     }
 
     let slug = slugify(title)
-    // Ensure slug uniqueness
     const existing = await prisma.blog.findUnique({ where: { slug } })
     if (existing) slug = `${slug}-${Date.now()}`
 
@@ -151,6 +198,24 @@ blogRouter.put('/:id', requireAuth, async (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to update post' })
   }
 })
+
+// DELETE /blog/:id — delete a post
+blogRouter.delete('/:id', requireAuth, async (req: any, res: any) => {
+    try {
+        const post = await prisma.blog.findUnique({ where: { id: req.params.id } });
+        if (!post) return res.status(404).json({ error: 'Not found' });
+        
+        if (post.authorId !== req.user.userId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        
+        await prisma.blog.delete({ where: { id: req.params.id } });
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
 
 // POST /blog/:id/comments — add a comment
 blogRouter.post('/:id/comments', requireAuth, async (req: any, res: any) => {

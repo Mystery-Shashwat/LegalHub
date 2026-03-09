@@ -40,3 +40,13 @@ export async function sendPasswordReset(to: string, name: string, resetUrl: stri
               <p>If you did not request this, please ignore this email.</p>`
   })
 }
+
+// Generic email sender — used by OTP, notifications, etc.
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  await resend.emails.send({
+    from: `LegalHub <${process.env.EMAIL_FROM || 'noreply@legalhub.in'}>`,
+    to,
+    subject,
+    html,
+  })
+}

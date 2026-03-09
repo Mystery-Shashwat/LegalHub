@@ -264,3 +264,233 @@ adminRouter.post("/payouts/:lawyerProfileId/process", requireAdmin, async (req: 
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+// ─── ADDITIONAL ADMIN ENDPOINTS ──────────────────────────────────
+
+// 10. List ALL users (clients + lawyers + admins), with pagination & search
+adminRouter.get("/users", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const page  = parseInt(req.query.page  as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const search = req.query.search as string | undefined;
+        const role   = req.query.role   as string | undefined;
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (role) where.role = role.toUpperCase();
+        if (search) {
+            where.OR = [
+                { name:  { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+            ];
+        }
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                select: {
+                    id: true, name: true, email: true, phone: true,
+                    role: true, isActive: true, isEmailVerified: true,
+                    createdAt: true,
+                    lawyerProfile: { select: { status: true, specializations: true, avgRating: true } }
+                },
+                orderBy: { createdAt: "desc" },
+                skip, take: limit
+            }),
+            prisma.user.count({ where })
+        ]);
+
+        res.json({ users, total, page, pages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error("List all users error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 11. Get single user detail (admin)
+adminRouter.get("/users/:id", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.params.id },
+            include: {
+                clientProfile: true,
+                lawyerProfile: { include: { availability: true } },
+                bookingsAsClient: {
+                    orderBy: { createdAt: "desc" },
+                    take: 10,
+                    include: { lawyer: { select: { user: { select: { name: true } } } } }
+                }
+            }
+        });
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json({ user });
+    } catch (error) {
+        console.error("Get user detail error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 12. List ALL lawyers (with status filter: PENDING | VERIFIED | REJECTED | SUSPENDED)
+adminRouter.get("/lawyers", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const page   = parseInt(req.query.page   as string) || 1;
+        const limit  = parseInt(req.query.limit  as string) || 20;
+        const status = req.query.status as string | undefined;
+        const search = req.query.search as string | undefined;
+        const skip   = (page - 1) * limit;
+
+        const where: any = {};
+        if (status) where.status = status.toUpperCase();
+        if (search) {
+            where.OR = [
+                { user:  { name:  { contains: search, mode: "insensitive" } } },
+                { user:  { email: { contains: search, mode: "insensitive" } } },
+                { city:  { contains: search, mode: "insensitive" } },
+            ];
+        }
+
+        const [lawyers, total] = await Promise.all([
+            prisma.lawyerProfile.findMany({
+                where,
+                include: {
+                    user: { select: { name: true, email: true, phone: true, isActive: true, createdAt: true } }
+                },
+                orderBy: { createdAt: "desc" },
+                skip, take: limit
+            }),
+            prisma.lawyerProfile.count({ where })
+        ]);
+
+        res.json({ lawyers, total, page, pages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error("List all lawyers error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 13. Suspend / unsuspend a lawyer profile
+adminRouter.put("/lawyers/:id/suspend", requireAdmin, async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { suspend, reason } = req.body;
+
+        const profile = await prisma.lawyerProfile.update({
+            where: { id },
+            data: {
+                status: suspend ? "SUSPENDED" : "VERIFIED",
+                rejectionReason: suspend ? (reason || "Suspended by admin") : null
+            },
+            include: { user: { select: { id: true, name: true } } }
+        });
+
+        await prisma.notification.create({
+            data: {
+                userId: profile.user.id,
+                type: "SYSTEM",
+                title: suspend ? "Account Suspended" : "Account Reinstated",
+                body: suspend
+                    ? `Your lawyer account has been suspended. Reason: ${reason || "Policy violation"}. Contact support@legalhub.in to appeal.`
+                    : "Your lawyer account has been reinstated. You can now accept bookings again."
+            }
+        });
+
+        res.json({ message: `Lawyer ${suspend ? "suspended" : "reinstated"} successfully`, profile });
+    } catch (error) {
+        console.error("Suspend lawyer error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 14. List ALL bookings (admin view)
+adminRouter.get("/bookings", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const page   = parseInt(req.query.page   as string) || 1;
+        const limit  = parseInt(req.query.limit  as string) || 20;
+        const status = req.query.status as string | undefined;
+        const skip   = (page - 1) * limit;
+
+        const where: any = status ? { status: status.toUpperCase() } : {};
+
+        const [bookings, total] = await Promise.all([
+            prisma.booking.findMany({
+                where,
+                include: {
+                    client: { select: { name: true, email: true } },
+                    lawyer: { select: { user: { select: { name: true } }, specializations: true } },
+                    payment: { select: { amount: true, status: true } }
+                },
+                orderBy: { createdAt: "desc" },
+                skip, take: limit
+            }),
+            prisma.booking.count({ where })
+        ]);
+
+        res.json({ bookings, total, page, pages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error("Admin list bookings error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 15. List ALL reviews (admin — can also delete via DELETE /reviews/:id)
+adminRouter.get("/reviews", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const page  = parseInt(req.query.page   as string) || 1;
+        const limit = parseInt(req.query.limit  as string) || 20;
+        const skip  = (page - 1) * limit;
+
+        const [reviews, total] = await Promise.all([
+            prisma.review.findMany({
+                include: {
+                    client: { select: { name: true, email: true } },
+                    lawyer: { select: { user: { select: { name: true } } } }
+                },
+                orderBy: { createdAt: "desc" },
+                skip, take: limit
+            }),
+            prisma.review.count()
+        ]);
+
+        res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error("Admin list reviews error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 16. Platform revenue & activity summary (detailed)
+adminRouter.get("/analytics", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const [
+            totalUsers, newUsersThisMonth,
+            totalBookings, bookingsThisMonth,
+            completedBookings, cancelledBookings,
+            totalRevenue, revenueThisMonth,
+            pendingLawyers, disputesOpen
+        ] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
+            prisma.booking.count(),
+            prisma.booking.count({ where: { createdAt: { gte: startOfMonth } } }),
+            prisma.booking.count({ where: { status: "COMPLETED" } }),
+            prisma.booking.count({ where: { status: "CANCELLED" } }),
+            prisma.payment.aggregate({ _sum: { commissionAmount: true }, where: { status: "PAID" } }),
+            prisma.payment.aggregate({ _sum: { commissionAmount: true }, where: { status: "PAID", createdAt: { gte: startOfMonth } } }),
+            prisma.lawyerProfile.count({ where: { status: "PENDING" } }),
+            prisma.dispute.count({ where: { status: "OPEN" } })
+        ]);
+
+        res.json({
+            users:    { total: totalUsers,    thisMonth: newUsersThisMonth },
+            bookings: { total: totalBookings, thisMonth: bookingsThisMonth, completed: completedBookings, cancelled: cancelledBookings },
+            revenue:  { total: totalRevenue._sum.commissionAmount || 0, thisMonth: revenueThisMonth._sum.commissionAmount || 0 },
+            pending:  { lawyers: pendingLawyers, disputes: disputesOpen }
+        });
+    } catch (error) {
+        console.error("Admin analytics error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});

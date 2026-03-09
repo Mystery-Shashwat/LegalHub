@@ -50,6 +50,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Messages", href: "/messages", icon: MessageSquare },
     { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
     { title: "Templates", href: "/templates", icon: FileText },
+    { title: "Blogs", href: "/blogs", icon: FileText },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
 
@@ -68,18 +69,23 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
   ];
 
   const adminLinks = [
-    { title: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
-    { title: "Lawyers", href: "/admin/lawyers", icon: User },
-    { title: "Clients", href: "/admin/clients", icon: User },
-    { title: "Disputes", href: "/admin/disputes", icon: MessageSquare },
-    { title: "Settings", href: "/settings", icon: Settings },
+    { title: "Dashboard",  href: "/admin/dashboard",  icon: BarChart3 },
+    { title: "Users",      href: "/admin/users",      icon: User },
+    { title: "Lawyers",    href: "/admin/lawyers",    icon: Scale },
+    { title: "Clients",    href: "/admin/clients",    icon: User },
+    { title: "Bookings",   href: "/admin/bookings",   icon: Calendar },
+    { title: "Reviews",    href: "/admin/reviews",    icon: FileText },
+    { title: "Disputes",   href: "/admin/disputes",   icon: MessageSquare },
+    { title: "Payouts",    href: "/admin/payouts",    icon: IndianRupee },
+    { title: "Blogs",      href: "/blogs",            icon: FileText },
+    { title: "Settings",   href: "/settings",         icon: Settings },
   ];
 
   const links = user.role === "ADMIN" ? adminLinks : user.role === "LAWYER" ? lawyerLinks : clientLinks;
 
   return (
-    <div className={cn("pb-12 h-full flex flex-col bg-sidebar text-sidebar-foreground", className)}>
-      <div className="space-y-4 py-4 flex-1">
+    <div className={cn("h-full flex flex-col bg-sidebar text-sidebar-foreground", className)}>
+      <div className="space-y-4 py-4 flex-1 overflow-y-auto">
         <div className="px-3 py-2">
           {/* Brand Logo */}
           <div className="mb-8 px-4 flex items-center h-10">
@@ -116,9 +122,9 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
           </div>
         </div>
       </div>
-      <div className="p-4 mt-auto">
+      <div className="p-4 mt-auto shrink-0 border-t border-white/10">
         <div className="mb-4 px-4 text-sm text-muted-foreground break-all">
-          <p className="font-medium text-foreground">{user.name}</p>
+          <p className="font-medium text-sidebar-foreground">{user.name}</p>
           <p>{user.email}</p>
         </div>
         <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/20" onClick={handleLogout}>
