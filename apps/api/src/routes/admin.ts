@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAdmin } from "../middleware/guards";
+import { requireAdmin, requireAuth } from "../middleware/guards";
 import { prisma } from "../lib/prisma";
 import { Request, Response } from "express";
 import { z } from "zod";
@@ -112,6 +112,43 @@ adminRouter.get("/disputes", requireAdmin, async (req: Request, res: Response) =
     }
 });
 
+// 5b. Submit a dispute (client or lawyer)
+adminRouter.post("/disputes", requireAuth, async (req: any, res: Response) => {
+    try {
+        const { reason, description, bookingId } = req.body;
+        if (!reason || !description || description.trim().length < 20) {
+            return res.status(400).json({ error: "reason and description (min 20 chars) are required" });
+        }
+
+        const dispute = await prisma.dispute.create({
+            data: {
+                userId: req.user.userId,
+                reason,
+                description: description.trim()
+            }
+        });
+
+        // Notify admin
+        const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+        if (admins.length > 0) {
+            await prisma.notification.create({
+                data: {
+                    userId: admins[0].id,
+                    type: "SYSTEM",
+                    title: "New Dispute Submitted",
+                    body: `A user has raised a dispute: "${reason}"`,
+                    link: "/admin/disputes"
+                }
+            });
+        }
+
+        res.status(201).json({ dispute, message: "Dispute submitted. Our team will review within 48 hours." });
+    } catch (error) {
+        console.error("Submit dispute error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // 6. Resolve dispute
 adminRouter.put("/disputes/:id/resolve", requireAdmin, async (req: Request, res: Response) => {
     try {
@@ -129,3 +166,101 @@ adminRouter.put("/disputes/:id/resolve", requireAdmin, async (req: Request, res:
     }
 });
 
+// 7. Suspend / ban a user
+adminRouter.put("/users/:id/ban", requireAdmin, async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { banned, reason } = req.body;
+
+        const user = await prisma.user.update({
+            where: { id },
+            data: { isActive: !banned }
+        });
+
+        // Notify the user
+        await prisma.notification.create({
+            data: {
+                userId: id,
+                type: "SYSTEM",
+                title: banned ? "Account Suspended" : "Account Reinstated",
+                body: banned
+                    ? `Your account has been suspended. Reason: ${reason || "Policy violation"}. Contact support@legalhub.in to appeal.`
+                    : "Your account has been reinstated. You can now access all features."
+            }
+        });
+
+        res.json({ message: `User ${banned ? "suspended" : "reinstated"} successfully`, user });
+    } catch (error) {
+        console.error("Ban user error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 8. List pending payouts (lawyers with completed paid bookings awaiting settlement)
+adminRouter.get("/payouts/pending", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        // Group completed paid bookings by lawyer that have pending payout
+        const lawyers = await prisma.lawyerProfile.findMany({
+            where: {
+                bookings: {
+                    some: { status: "COMPLETED", isPaid: true, payment: { status: "PAID" } }
+                }
+            },
+            include: {
+                user: { select: { name: true, email: true } },
+                bookings: {
+                    where: { status: "COMPLETED", isPaid: true, payment: { status: "PAID" } },
+                    include: { payment: true }
+                }
+            }
+        });
+
+        const payouts = lawyers.map(l => ({
+            lawyerProfileId: l.id,
+            lawyerName: l.user.name,
+            lawyerEmail: l.user.email,
+            totalPending: l.bookings.reduce((sum, b) => sum + (b.payment?.lawyerPayout ?? 0), 0),
+            sessionCount: l.bookings.length
+        }));
+
+        res.json({ payouts, total: payouts.length });
+    } catch (error) {
+        console.error("Pending payouts error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 9. Process (mark processed) a payout
+adminRouter.post("/payouts/:lawyerProfileId/process", requireAdmin, async (req: any, res: Response) => {
+    try {
+        const { lawyerProfileId } = req.params;
+        const { amount, transactionId } = req.body;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: "Valid amount required" });
+        }
+
+        // In production: trigger Razorpay fund transfer
+        // For now: notify the lawyer
+        const lawyer = await prisma.lawyerProfile.findUnique({
+            where: { id: lawyerProfileId },
+            select: { userId: true, user: { select: { name: true } } }
+        });
+        if (!lawyer) return res.status(404).json({ error: "Lawyer not found" });
+
+        await prisma.notification.create({
+            data: {
+                userId: lawyer.userId,
+                type: "PAYMENT",
+                title: "Payout Processed",
+                body: `₹${amount} has been transferred to your account. Ref: ${transactionId || "LEGALHUB-" + Date.now()}`,
+                link: "/lawyer/earnings"
+            }
+        });
+
+        res.json({ message: `Payout of ₹${amount} processed for ${lawyer.user.name}` });
+    } catch (error) {
+        console.error("Process payout error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});

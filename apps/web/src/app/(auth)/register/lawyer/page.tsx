@@ -15,7 +15,33 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
 import api from "@/lib/api"
+
+// Legal specializations based on Indian legal practice areas
+const SPECIALIZATIONS = [
+  "Criminal Law",
+  "Civil Law",
+  "Family Law & Matrimonial Disputes",
+  "Corporate & Commercial Law",
+  "Property & Real Estate Law",
+  "Labour & Employment Law",
+  "Intellectual Property Law",
+  "Tax Law & GST",
+  "Banking & Finance Law",
+  "Constitutional Law",
+  "Environmental Law",
+  "Consumer Protection Law",
+  "Cyber & IT Law",
+  "Immigration & Visa Law",
+  "Arbitration & Mediation",
+  "Insolvency & Bankruptcy Law",
+  "Medical & Healthcare Law",
+  "Insurance Law",
+  "Motor Accident Claims",
+  "Human Rights Law",
+]
 
 const lawyerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -25,18 +51,18 @@ const lawyerSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
+  referralCode: z.string().optional(),
   barCouncilNumber: z.string().min(3, "Bar council number is required"),
   barCouncilState: z.string().min(2, "Bar council state is required"),
   enrollmentYear: z.string().min(4, "Enrollment date is required")
     .transform(val => new Date(val).getFullYear())
     .pipe(z.number().min(1950).max(new Date().getFullYear())),
-  specializations: z.string().min(2, "Comma-separated specializations required"),
   courtsOfPractice: z.string().min(2, "Comma-separated courts required"),
   experienceYears: z.coerce.number().int().min(0, "Must be 0 or more"),
   city: z.string().min(2, "City is required"),
   state: z.string().min(2, "State is required"),
   languages: z.string().min(2, "Comma-separated languages required"),
-  hourlyRate: z.coerce.number().min(500, "Minimum rate is ₹500"),
+  hourlyRate: z.coerce.number().min(100, "Minimum rate is ₹100"),
   bio: z.string().max(500, "Bio max 500 characters").optional(),
   degreeCollege: z.string().optional(),
   degreeYear: z.union([
@@ -59,6 +85,8 @@ export default function RegisterLawyerPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([])
+  const [specError, setSpecError] = useState("")
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<Record<string, unknown>>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,31 +97,53 @@ export default function RegisterLawyerPage() {
     }
   })
 
+  const toggleSpecialization = (spec: string) => {
+    setSelectedSpecializations(prev => {
+      if (prev.includes(spec)) return prev.filter(s => s !== spec)
+      if (prev.length >= 5) {
+        toast.error("You can select up to 5 specializations")
+        return prev
+      }
+      return [...prev, spec]
+    })
+    setSpecError("")
+  }
+
   const handleNextStep = async () => {
-    let fieldsToValidate: string[] = [];
+    let fieldsToValidate: string[] = []
     if (step === 1) {
-       fieldsToValidate = ['name', 'email', 'phone', 'password'];
+       fieldsToValidate = ['name', 'email', 'phone', 'password']
     } else if (step === 2) {
-       fieldsToValidate = ['barCouncilNumber', 'barCouncilState', 'profilePhotoUrl', 'certificateOfPracticeUrl', 'degreeDocumentUrl', 'govtIdUrl', 'enrollmentYear', 'experienceYears', 'degreeCollege', 'degreeYear'];
+       fieldsToValidate = ['barCouncilNumber', 'barCouncilState', 'profilePhotoUrl', 'certificateOfPracticeUrl', 'degreeDocumentUrl', 'govtIdUrl', 'enrollmentYear', 'experienceYears', 'degreeCollege', 'degreeYear']
     } else if (step === 3) {
-       fieldsToValidate = ['specializations', 'courtsOfPractice', 'city', 'state', 'languages'];
+       // Validate specializations manually
+       if (selectedSpecializations.length === 0) {
+         setSpecError("Please select at least one specialization")
+         return
+       }
+       fieldsToValidate = ['courtsOfPractice', 'city', 'state', 'languages']
     }
 
-    const isValid = await trigger(fieldsToValidate);
+    const isValid = await trigger(fieldsToValidate)
     if (isValid) {
-       setStep(s => s + 1);
+       setStep(s => s + 1)
     }
   }
 
   const onSubmit = async (data: LawyerForm) => {
+    if (selectedSpecializations.length === 0) {
+      setSpecError("Please select at least one specialization")
+      setStep(3)
+      return
+    }
+
     setIsLoading(true)
     try {
-      // transform comma separated strings into arrays for the backend schema
       const payload = {
           ...data,
-          specializations: data.specializations.split(',').map(s => s.trim()).filter(Boolean),
-          courtsOfPractice: data.courtsOfPractice.split(',').map(s => s.trim()).filter(Boolean),
-          languages: data.languages.split(',').map(s => s.trim()).filter(Boolean),
+          specializations: selectedSpecializations,
+          courtsOfPractice: data.courtsOfPractice.split(',').map((s: string) => s.trim()).filter(Boolean),
+          languages: data.languages.split(',').map((s: string) => s.trim()).filter(Boolean),
           profilePhotoUrl: data.profilePhotoUrl
       }
       const res = await api.post('/auth/register/lawyer', payload)
@@ -101,9 +151,9 @@ export default function RegisterLawyerPage() {
       router.push('/login')
     } catch (err: unknown) {
       if (err instanceof AxiosError && err.response) {
-          toast.error(err.response.data?.error || "Failed to create account. Please check your details.");
+          toast.error(err.response.data?.error || "Failed to create account. Please check your details.")
       } else if (err instanceof Error) {
-          toast.error(err.message || "Failed to create account. Please check your details.");
+          toast.error(err.message || "Failed to create account. Please check your details.")
       } else {
           toast.error("An unexpected error occurred.")
       }
@@ -121,13 +171,13 @@ export default function RegisterLawyerPage() {
             <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Lawyer Registration</CardTitle>
             <CardDescription className="text-base text-muted-foreground">
                 Step {step} of 4: {
-                    step === 1 ? 'Personal Details' : 
-                    step === 2 ? 'Bar Council & Education' : 
+                    step === 1 ? 'Personal Details' :
+                    step === 2 ? 'Bar Council & Education' :
                     step === 3 ? 'Practice & Experience' : 'Rates & Bio'
                 }
             </CardDescription>
             <div className="w-full bg-secondary h-2 mt-4 rounded-full overflow-hidden">
-                <div 
+                <div
                     className="bg-primary h-full transition-all duration-300"
                     style={{ width: `${(step / 4) * 100}%` }}
                 />
@@ -159,6 +209,11 @@ export default function RegisterLawyerPage() {
                             <Input id="password" type="password" {...register("password")} />
                             {errors.password && <p className="text-xs text-destructive">{errors.password.message as string}</p>}
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                            <Input id="referralCode" placeholder="Enter code" {...register("referralCode")} />
+                            {errors.referralCode && <p className="text-xs text-destructive">{errors.referralCode.message as string}</p>}
+                        </div>
                     </div>
                 </div>
 
@@ -186,7 +241,7 @@ export default function RegisterLawyerPage() {
                             {errors.certificateOfPracticeUrl && <p className="text-xs text-destructive">{errors.certificateOfPracticeUrl.message as string}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="degreeDocumentUrl">Law Degree Document URL (Optionsal)</Label>
+                            <Label htmlFor="degreeDocumentUrl">Law Degree Document URL (Optional)</Label>
                             <Input id="degreeDocumentUrl" placeholder="https://..." {...register("degreeDocumentUrl")} />
                             {errors.degreeDocumentUrl && <p className="text-xs text-destructive">{errors.degreeDocumentUrl.message as string}</p>}
                         </div>
@@ -219,14 +274,44 @@ export default function RegisterLawyerPage() {
                 </div>
 
                 {/* STEP 3: Practice & Experience */}
-                <div className={step === 3 ? 'block space-y-4' : 'hidden'}>
-                    <div className="space-y-2">
-                        <Label htmlFor="specializations">Specializations (Comma separated)</Label>
-                        <Input id="specializations" placeholder="Corporate, Family (comma separated)" {...register("specializations")} />
-                        {errors.specializations && <p className="text-xs text-destructive">{errors.specializations.message as string}</p>}
+                <div className={step === 3 ? 'block space-y-5' : 'hidden'}>
+                    {/* Specializations Multiselect */}
+                    <div className="space-y-3">
+                        <div>
+                            <Label className="text-base font-semibold">Areas of Specialization <span className="text-muted-foreground font-normal">(up to 5)</span></Label>
+                            <p className="text-xs text-muted-foreground mt-1">Select all the legal areas you actively practice in.</p>
+                        </div>
+
+                        {/* Selected tags */}
+                        {selectedSpecializations.length > 0 && (
+                            <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                {selectedSpecializations.map(spec => (
+                                    <Badge key={spec} variant="default" className="gap-1 pr-1 cursor-pointer" onClick={() => toggleSpecialization(spec)}>
+                                        {spec}
+                                        <X className="w-3 h-3" />
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Checkbox grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border rounded-lg p-3 bg-muted/20">
+                            {SPECIALIZATIONS.map(spec => (
+                                <div key={spec} className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent">
+                                    <Checkbox
+                                        id={`spec-${spec}`}
+                                        checked={selectedSpecializations.includes(spec)}
+                                        onCheckedChange={() => toggleSpecialization(spec)}
+                                    />
+                                    <label htmlFor={`spec-${spec}`} className="text-sm cursor-pointer leading-tight" onClick={(e) => e.preventDefault()}>{spec}</label>
+                                </div>
+                            ))}
+                        </div>
+                        {specError && <p className="text-xs text-destructive">{specError}</p>}
                     </div>
+
                     <div className="space-y-2">
-                        <Label htmlFor="courtsOfPractice">Courts (Comma separated)</Label>
+                        <Label htmlFor="courtsOfPractice">Courts of Practice (Comma separated)</Label>
                         <Input id="courtsOfPractice" placeholder="Supreme Court, Bombay HC" {...register("courtsOfPractice")} />
                         {errors.courtsOfPractice && <p className="text-xs text-destructive">{errors.courtsOfPractice.message as string}</p>}
                     </div>
@@ -258,10 +343,10 @@ export default function RegisterLawyerPage() {
                             {errors.hourlyRate && <p className="text-xs text-destructive">{errors.hourlyRate.message as string}</p>}
                         </div>
                         <div className="space-y-2 pt-8 flex items-center space-x-2">
-                             <Checkbox 
-                                id="freeConsultation" 
-                                checked={watch("freeConsultation") as boolean} 
-                                onCheckedChange={(checked) => setValue("freeConsultation", checked)} 
+                             <Checkbox
+                                id="freeConsultation"
+                                checked={watch("freeConsultation") as boolean}
+                                onCheckedChange={(checked) => setValue("freeConsultation", checked)}
                             />
                             <Label htmlFor="freeConsultation">Offer Free Initial Consultation?</Label>
                         </div>
@@ -286,16 +371,16 @@ export default function RegisterLawyerPage() {
                 </div>
 
             </CardContent>
-            
+
             <CardFooter className="flex justify-between border-t pt-6 mt-4">
-                <Button 
-                    type="button" 
-                    variant="outline" 
+                <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => step > 1 ? setStep(step - 1) : router.push('/register')}
                 >
                     Back
                 </Button>
-                
+
                 {step < 4 ? (
                     <Button type="button" onClick={handleNextStep}>
                         Next Step

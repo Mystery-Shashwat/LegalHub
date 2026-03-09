@@ -12,19 +12,26 @@ const clientSchema = z.object({
   email:    z.string().email(),
   phone:    z.string().regex(/^[6-9]\d{9}$/),
   password: z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
+  referralCode: z.string().optional(),
 })
 
 authRouter.post('/register/client', async (req, res) => {
   const r = clientSchema.safeParse(req.body)
   if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors })
 
-  const { name, email, phone, password } = r.data
+  const { name, email, phone, password, referralCode } = r.data
   const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { phone }] } })
   if (exists) return res.status(409).json({ error: 'Email or phone already registered' })
 
+  let referredById = null;
+  if (referralCode) {
+    const referrer = await prisma.user.findUnique({ where: { referralCode } });
+    if (referrer) referredById = referrer.id;
+  }
+
   const user = await prisma.user.create({
     data: { name, email, phone, passwordHash: await bcrypt.hash(password, 12),
-            role: 'CLIENT', clientProfile: { create: {} } },
+            role: 'CLIENT', referredById, clientProfile: { create: {} } },
     select: { id: true, name: true, email: true, role: true }
   })
   const tokens = generateTokens(user.id, user.role)
@@ -38,6 +45,7 @@ const lawyerSchema = z.object({
   email: z.string().email(),
   phone: z.string().regex(/^[6-9]\d{9}$/),
   password: z.string().min(8).regex(/[A-Z]/).regex(/[0-9]/),
+  referralCode: z.string().optional(),
   barCouncilNumber:  z.string().min(3),
   barCouncilState:   z.string().min(2),
   enrollmentYear:    z.number().int().min(1950).max(new Date().getFullYear()),
@@ -64,7 +72,7 @@ const lawyerSchema = z.object({
 authRouter.post('/register/lawyer', async (req, res) => {
   const r = lawyerSchema.safeParse(req.body)
   if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors })
-  const { name, email, phone, password, ...profile } = r.data
+  const { name, email, phone, password, referralCode, ...profile } = r.data
 
   const [e, p, b] = await Promise.all([
     prisma.user.findUnique({ where: { email } }),
@@ -75,9 +83,15 @@ authRouter.post('/register/lawyer', async (req, res) => {
   if (p) return res.status(409).json({ error: 'Phone already registered' })
   if (b) return res.status(409).json({ error: 'Bar Council number already registered' })
 
+  let referredById = null;
+  if (referralCode) {
+    const referrer = await prisma.user.findUnique({ where: { referralCode } });
+    if (referrer) referredById = referrer.id;
+  }
+
   const user = await prisma.user.create({
     data: { name, email, phone, passwordHash: await bcrypt.hash(password, 12),
-            role: 'LAWYER', lawyerProfile: { create: { ...profile, status: 'PENDING' } } },
+            role: 'LAWYER', referredById, lawyerProfile: { create: { ...profile, status: 'PENDING' } } },
     include: { lawyerProfile: { select: { id: true, status: true } } }
   })
 
@@ -148,6 +162,74 @@ authRouter.post('/logout', async (req, res) => {
   const { refreshToken } = req.body
   if (refreshToken) await prisma.refreshToken.deleteMany({ where: { token: refreshToken } })
   res.json({ message: 'Logged out' })
+})
+
+// ── FORGOT PASSWORD ────────────────────────────
+authRouter.post('/forgot-password', async (req, res) => {
+  const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Email is required' })
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } })
+    // Always return success to prevent email enumeration
+    if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' })
+
+    // Generate secure token
+    const crypto = await import('crypto')
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Invalidate any existing tokens for this user
+    await prisma.passwordReset.deleteMany({ where: { userId: user.id } })
+
+    await prisma.passwordReset.create({
+      data: { userId: user.id, token, expiresAt }
+    })
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`
+
+    const { sendPasswordReset } = await import('../services/email')
+    await sendPasswordReset(user.email, user.name, resetUrl).catch(console.error)
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to process request' })
+  }
+})
+
+// ── RESET PASSWORD ────────────────────────────
+authRouter.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body
+
+  if (!token || !password || password.length < 8) {
+    return res.status(400).json({ error: 'Valid token and password (min 8 chars) are required' })
+  }
+
+  try {
+    const reset = await prisma.passwordReset.findUnique({
+      where: { token },
+      include: { user: true }
+    })
+
+    if (!reset) return res.status(400).json({ error: 'Invalid or expired reset link' })
+    if (reset.expiresAt < new Date()) return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' })
+    if (reset.usedAt) return res.status(400).json({ error: 'Reset link has already been used' })
+
+    // Update password and mark token used
+    const passwordHash = await bcrypt.hash(password, 12)
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: reset.userId }, data: { passwordHash } }),
+      prisma.passwordReset.update({ where: { token }, data: { usedAt: new Date() } }),
+      // Invalidate all sessions
+      prisma.refreshToken.deleteMany({ where: { userId: reset.userId } })
+    ])
+
+    res.json({ message: 'Password reset successfully. Please login with your new password.' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to reset password' })
+  }
 })
 
 // ── helper ───────────────────────────────────

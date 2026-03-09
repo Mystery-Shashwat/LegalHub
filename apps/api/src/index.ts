@@ -18,6 +18,11 @@ import { aiRouter }       from './routes/ai'
 import { signatureRouter } from './routes/signatures'
 import { forumRouter }    from './routes/forum'
 import { rtiRouter }      from './routes/rti'
+import { templateRouter } from './routes/templates'
+import { referralRouter } from './routes/referrals'
+import { notificationRouter } from './routes/notifications'
+import { lawyerEarningsRouter } from './routes/lawyer-earnings'
+import { blogRouter } from './routes/blog'
 import { setupSocket }    from './services/socket'
 import { rateLimiter }    from './middleware/rateLimit'
 
@@ -45,6 +50,11 @@ app.use('/api/ai',       aiRouter)
 app.use('/api/signatures', signatureRouter)
 app.use('/api/forum',      forumRouter)
 app.use('/api/rti',        rtiRouter)
+app.use('/api/templates',  templateRouter)
+app.use('/api/referrals',  referralRouter)
+app.use('/api/notifications', notificationRouter)
+app.use('/api/lawyers',    lawyerEarningsRouter)  // earnings/analytics sub-routes
+app.use('/api/blog',       blogRouter)
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }))
 
 setupSocket(io)

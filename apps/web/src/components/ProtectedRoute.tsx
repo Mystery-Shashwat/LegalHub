@@ -6,13 +6,20 @@ import { useAuth } from '@/store/auth'
 type Props = { children: React.ReactNode; allowedRoles: string[] }
 
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
-  const { user } = useAuth()
-  const router    = useRouter()
+  const { user, _hasHydrated } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    if (!user)                              router.push('/login')
+    // Wait until Zustand has finished reading from sessionStorage
+    // before making any redirect decisions, to prevent reload → /login flashes
+    if (!_hasHydrated) return
+
+    if (!user) router.push('/login')
     else if (!allowedRoles.includes(user.role)) router.push('/')
-  }, [user, allowedRoles, router])
+  }, [user, _hasHydrated, allowedRoles, router])
+
+  // While hydrating, show nothing (avoids flash)
+  if (!_hasHydrated) return null
 
   if (!user || !allowedRoles.includes(user.role)) return null
   return <>{children}</>
