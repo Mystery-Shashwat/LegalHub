@@ -50,6 +50,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Messages", href: "/messages", icon: MessageSquare },
     { title: "Q&A Forum", href: "/forum", icon: MessageSquare },
     { title: "Templates", href: "/templates", icon: FileText },
+    { title: "Blogs", href: "/blogs", icon: FileText },
     { title: "Settings", href: "/settings", icon: Settings },
   ];
 
@@ -76,6 +77,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Reviews",    href: "/admin/reviews",    icon: FileText },
     { title: "Disputes",   href: "/admin/disputes",   icon: MessageSquare },
     { title: "Payouts",    href: "/admin/payouts",    icon: IndianRupee },
+    { title: "Blogs",      href: "/blogs",            icon: FileText },
     { title: "Settings",   href: "/settings",         icon: Settings },
   ];
 
@@ -122,7 +124,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
       </div>
       <div className="p-4 mt-auto shrink-0 border-t border-white/10">
         <div className="mb-4 px-4 text-sm text-muted-foreground break-all">
-          <p className="font-medium text-foreground">{user.name}</p>
+          <p className="font-medium text-sidebar-foreground">{user.name}</p>
           <p>{user.email}</p>
         </div>
         <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/20" onClick={handleLogout}>
