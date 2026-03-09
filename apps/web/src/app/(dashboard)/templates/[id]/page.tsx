@@ -41,7 +41,7 @@ export default function TemplateDetailsPage() {
       // If user is client, fetch their purchases to see if they own it
       if (user?.role === "CLIENT") {
          const purchasesRes = await api.get("/templates/client/purchases");
-         const owns = purchasesRes.data.purchases.some((p: any) => p.templateId === id);
+         const owns = purchasesRes.data.purchases.some((p: { templateId: string }) => p.templateId === id);
          setHasPurchased(owns);
       }
     } catch (error) {
@@ -78,7 +78,7 @@ export default function TemplateDetailsPage() {
       
       // Auto-trigger download after purchase
       handleDownload();
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(error.response?.data?.error || "Failed to purchase template.");
     } finally {
       setPurchasing(false);
@@ -99,7 +99,7 @@ export default function TemplateDetailsPage() {
       document.body.removeChild(link);
       
       toast.success("Download started!");
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       toast.error(error.response?.data?.error || "Failed to download template.");
     } finally {
       setDownloading(false);
