@@ -33,9 +33,9 @@ paymentRouter.post("/create-order", requireAuth, async (req: Request, res: Respo
     }
 
     const options = {
-      amount: validated.amount * 100, // Razorpay works in paise
+      amount: Math.round(validated.amount * 100), // Razorpay works in paise and requires a strict integer
       currency: "INR",
-      receipt: `receipt_booking_${validated.bookingId}`,
+      receipt: `b_${validated.bookingId}`, // Shortened prefix to fit Razorpay's 40-char limit
     };
 
     const order = await razorpay.orders.create(options);
