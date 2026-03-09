@@ -22,6 +22,8 @@ import { templateRouter } from './routes/templates'
 import { referralRouter } from './routes/referrals'
 import { notificationRouter } from './routes/notifications'
 import { lawyerEarningsRouter } from './routes/lawyer-earnings'
+import { planRouter } from './routes/lawyer-plan'
+import { verificationRouter } from './routes/verification'
 import { blogRouter } from './routes/blog'
 import { setupSocket }    from './services/socket'
 import { rateLimiter }    from './middleware/rateLimit'
@@ -54,7 +56,10 @@ app.use('/api/templates',  templateRouter)
 app.use('/api/referrals',  referralRouter)
 app.use('/api/notifications', notificationRouter)
 app.use('/api/lawyers',    lawyerEarningsRouter)  // earnings/analytics sub-routes
+app.use('/api/lawyers',    planRouter)            // plan upgrade sub-routes
+app.use('/api/auth',       verificationRouter)    // OTP + email verification
 app.use('/api/blog',       blogRouter)
+app.use('/api/users',      clientRouter)          // shared user profile routes (GET/PUT /users/me, PUT /users/me/password)
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }))
 
 setupSocket(io)

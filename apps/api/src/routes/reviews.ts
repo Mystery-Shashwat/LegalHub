@@ -8,7 +8,7 @@ export const reviewRouter = Router()
 reviewRouter.post('/', requireAuth, async (req: any, res: any) => {
   try {
     const { bookingId, rating, comment } = req.body
-    const clientId = req.user!.id
+    const clientId = req.user.userId
 
     if (!bookingId || !rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'bookingId and rating (1-5) are required' })
@@ -99,7 +99,7 @@ reviewRouter.put('/:id/reply', requireAuth, async (req: any, res: any) => {
   try {
     const { id } = req.params
     const { reply } = req.body
-    const userId = req.user!.id
+    const userId = req.user.userId
 
     if (!reply?.trim()) return res.status(400).json({ error: 'Reply text is required' })
 
@@ -126,7 +126,7 @@ reviewRouter.put('/:id/reply', requireAuth, async (req: any, res: any) => {
 // DELETE /reviews/:id — admin removes abusive review
 reviewRouter.delete('/:id', requireAuth, async (req: any, res: any) => {
   try {
-    if (req.user!.role !== 'ADMIN') return res.status(403).json({ error: 'Admin only' })
+    if (req.user.role !== 'ADMIN') return res.status(403).json({ error: 'Admin only' })
 
     const review = await prisma.review.findUnique({ where: { id: req.params.id } })
     if (!review) return res.status(404).json({ error: 'Review not found' })

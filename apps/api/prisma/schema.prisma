@@ -50,6 +50,13 @@ enum DisputeStatus {
   RESOLVED
 }
 
+enum LawyerPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
 // ─── USER (base for all 3 roles) ──────────────
 model User {
   id               String   @id @default(cuid())
@@ -88,6 +95,7 @@ model User {
   passwordResets   PasswordReset[]  @relation("UserPasswordResets")
   blogs            Blog[]           @relation("UserBlogs")
   blogComments     BlogComment[]    @relation("UserBlogComments")
+  otpCodes         OTPCode[]        @relation("UserOTPCodes")
 }
 
 // ─── CLIENT PROFILE ───────────────────────────
@@ -137,6 +145,10 @@ model LawyerProfile {
   totalReviews            Int          @default(0)
   linkedinUrl             String?
   websiteUrl              String?
+
+  // Subscription plan
+  plan                    LawyerPlan   @default(FREE)
+  planExpiresAt           DateTime?
 
   bookings                Booking[]    @relation("LawyerBookings")
   reviews                 Review[]     @relation("LawyerReviews")
@@ -429,4 +441,17 @@ model BlogComment {
   author    User     @relation("UserBlogComments", fields: [authorId], references: [id])
   content   String
   createdAt DateTime @default(now())
+}
+
+// ─── OTP CODES (email / phone verification) ────
+model OTPCode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserOTPCodes", fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  purpose   String   // "email_verification" | "phone_verification" | "login_otp"
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, purpose])
 }

@@ -9,39 +9,54 @@ import { Button } from "@/components/ui/button";
 import { Menu, Search, Mail, Scale } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Root as VisuallyHidden } from "@radix-ui/react-visually-hidden"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    // Set initial value
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+      if (e.matches) setIsMobileMenuOpen(false); // close if resized to desktop
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   return (
     <ProtectedRoute allowedRoles={["CLIENT", "LAWYER", "ADMIN"]}>
-      <div className="flex min-h-screen flex-col md:flex-row bg-muted/30">
+      <div className="flex min-h-screen flex-col md:flex-row bg-muted/30 items-stretch">
         
-        {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b bg-background">
-          <div className="font-bold text-lg tracking-tight flex items-center gap-2">
-            <Scale className="w-5 h-5 text-primary" />
-            LegalHub
+        {/* Mobile Header — only rendered on mobile */}
+        {!isDesktop && (
+          <div className="md:hidden flex items-center justify-between p-4 border-b bg-background">
+            <div className="font-bold text-lg tracking-tight flex items-center gap-2">
+              <Scale className="w-5 h-5 text-primary" />
+              LegalHub
+            </div>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72 flex flex-col h-full overflow-y-auto">
+                 <VisuallyHidden>
+                   <SheetTitle>Dashboard Sidebar</SheetTitle>
+                   <SheetDescription>Navigation links for user dashboard</SheetDescription>
+                 </VisuallyHidden>
+                 <Sidebar className="border-none flex-1" onNavClick={() => setIsMobileMenuOpen(false)} />
+              </SheetContent>
+            </Sheet>
           </div>
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72">
-               <VisuallyHidden>
-                 <SheetTitle>Dashboard Sidebar</SheetTitle>
-                 <SheetDescription>Navigation links for user dashboard</SheetDescription>
-               </VisuallyHidden>
-               <Sidebar className="border-none" onNavClick={() => setIsMobileMenuOpen(false)} />
-            </SheetContent>
-          </Sheet>
-        </div>
+        )}
 
-        {/* Desktop Sidebar Navigation */}
-        <Sidebar className="hidden md:flex w-full md:w-64 md:min-h-screen" />
+        {/* Desktop Sidebar — sticky so it stays visible while scrolling */}
+        <Sidebar className="hidden md:flex w-full md:w-64 shrink-0 sticky top-0 h-screen overflow-y-auto" />
         
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-muted/20">
