@@ -172,7 +172,8 @@ bookingRouter.get("/:id/room", requireAuth, async (req: AuthRequest, res: Respon
              // Room likely already exists, we can fetch it (or construct the URL if we know the domain)
              const DAILY_DOMAIN = process.env.DAILY_DOMAIN;
              if(DAILY_DOMAIN && DAILY_DOMAIN !== "your_daily_domain_here") {
-                 return res.json({ url: `https://${DAILY_DOMAIN}.daily.co/${roomName}` });
+                 const fullDomain = DAILY_DOMAIN.includes(".daily.co") ? DAILY_DOMAIN : `${DAILY_DOMAIN}.daily.co`;
+                 return res.json({ url: `https://${fullDomain}/${roomName}` });
              } else {
                   return res.status(500).json({ error: "Room exists but DAILY_DOMAIN is not configured properly." });
              }
