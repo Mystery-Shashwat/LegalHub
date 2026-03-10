@@ -33,6 +33,7 @@ export default function Navbar() {
     '/rti',
     '/referrals',
     '/signatures',
+    '/blogs',
   ];
   
   const isDashboardRoute = dashboardPrefixes.some(prefix => pathname?.startsWith(prefix));
