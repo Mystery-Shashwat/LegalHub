@@ -43,7 +43,7 @@ export default function CaseDetailPage() {
       setUploading(true);
       try {
           // 1. Get Presigned URL
-          const { data: { uploadUrl } } = await api.post("/uploads/presign", {
+          const { data: { uploadUrl, publicUrl } } = await api.post("/uploads/presign", {
               fileName: file.name,
               fileType: file.type
           });
@@ -55,10 +55,16 @@ export default function CaseDetailPage() {
               headers: { "Content-Type": file.type }
           });
 
-          // 3. (Mock) Save document to Case database.
-          // Note: Full implementation requires backend route /cases/:id/documents
-          toast.success("Document uploaded successfully (Mock DB persistence)");
-          // loadCase();
+          // 3. Save document to Case database.
+          await api.post(`/cases/${id}/documents`, {
+              name: file.name,
+              url: publicUrl,
+              fileType: file.type,
+              sizeBytes: file.size
+          });
+
+          toast.success("Document uploaded successfully");
+          loadCase(); // Refresh the list
 
       } catch (error) {
           console.error("Upload error", error);
@@ -68,6 +74,20 @@ export default function CaseDetailPage() {
           // Reset file input
           e.target.value = '';
       }
+  };
+
+  const handleDownload = async (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      let key = urlObj.pathname;
+      if (key.startsWith('/')) key = key.slice(1);
+      
+      const { data } = await api.get(`/uploads/signed/${key}`);
+      window.open(data.url, "_blank");
+    } catch (error) {
+      console.error("Download error", error);
+      window.open(url, "_blank");
+    }
   };
 
   if (loading) return <div>Loading case details...</div>;
@@ -153,10 +173,12 @@ export default function CaseDetailPage() {
                                                 onSuccess={loadCase} 
                                             />
                                         )}
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                                <Download className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                                            </a>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => handleDownload(doc.url)}
+                                        >
+                                            <Download className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                                         </Button>
                                     </div>
                                 </div>

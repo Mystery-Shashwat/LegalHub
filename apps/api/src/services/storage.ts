@@ -26,9 +26,10 @@ export async function deleteFile(key: string) {
 }
 
 export async function getSignedDownloadUrl(key: string, expiresIn = 3600) {
+  const cleanKey = key.startsWith('/') ? key.slice(1) : key;
   return getSignedUrl(
     r2,
-    new GetObjectCommand({ Bucket: process.env.R2_BUCKET!, Key: key }),
+    new GetObjectCommand({ Bucket: process.env.R2_BUCKET!, Key: cleanKey }),
     { expiresIn }
   )
 }

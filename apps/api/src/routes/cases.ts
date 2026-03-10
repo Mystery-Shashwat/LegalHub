@@ -117,3 +117,50 @@ caseRouter.get("/:id", requireAuth, async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+// 4. Add Document to Case (after upload to Storage)
+const addDocumentSchema = z.object({
+    name: z.string(),
+    url: z.string().url(),
+    fileType: z.string(),
+    sizeBytes: z.number()
+});
+
+caseRouter.post("/:id/documents", requireAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const r = addDocumentSchema.safeParse(req.body);
+        if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors });
+
+        const caseRecord = await prisma.case.findUnique({ where: { id } });
+        if (!caseRecord) return res.status(404).json({ error: "Case not found" });
+
+        // Authorization check (lawyer of the case or client of the case)
+        const isClient = req.user!.role === "CLIENT" && caseRecord.clientId === req.user!.userId;
+        let isLawyer = false;
+        if (req.user!.role === "LAWYER") {
+            const profile = await prisma.lawyerProfile.findUnique({ where: { userId: req.user!.userId } });
+            isLawyer = caseRecord.lawyerProfileId === profile?.id;
+        }
+
+        if (!isClient && !isLawyer) {
+            return res.status(403).json({ error: "Not authorized to add documents to this case." });
+        }
+
+        const document = await prisma.document.create({
+            data: {
+                caseId: id,
+                name: r.data.name,
+                url: r.data.url,
+                fileType: r.data.fileType,
+                sizeBytes: r.data.sizeBytes,
+                uploadedBy: req.user!.userId
+            }
+        });
+
+        res.status(201).json({ message: "Document added to case", document });
+    } catch (error) {
+        console.error("Add document error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
