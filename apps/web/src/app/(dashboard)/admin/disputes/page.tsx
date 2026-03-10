@@ -22,6 +22,7 @@ interface Dispute {
     reason: string;
     description: string | null;
     status: "OPEN" | "RESOLVED";
+    bookingId: string | null;
     createdAt: string;
     user: {
         name: string;
@@ -83,6 +84,7 @@ export default function AdminDisputesPage() {
                         <TableRow>
                             <TableHead>User / Role</TableHead>
                             <TableHead>Reason</TableHead>
+                            <TableHead>Booking ID</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead>Status</TableHead>
@@ -104,6 +106,9 @@ export default function AdminDisputesPage() {
                                         <div className="text-xs text-muted-foreground">{dispute.user.email} • {dispute.user.role}</div>
                                     </TableCell>
                                     <TableCell className="font-medium">{dispute.reason}</TableCell>
+                                    <TableCell className="font-mono text-[10px] text-muted-foreground uppercase">
+                                        {dispute.bookingId || "-"}
+                                    </TableCell>
                                     <TableCell className="max-w-xs truncate" title={dispute.description || ""}>
                                         {dispute.description || "-"}
                                     </TableCell>

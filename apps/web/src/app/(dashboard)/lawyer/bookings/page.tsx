@@ -7,7 +7,19 @@ import api from "@/lib/api";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { VideoRoom } from "@/components/VideoRoom";
-import { Video, ChevronLeft } from "lucide-react";
+import { Video, ChevronLeft, Briefcase } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
 
 interface Booking {
   id: string;
@@ -22,6 +34,11 @@ export default function LawyerBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [caseForm, setCaseForm] = useState({ title: "", description: "", practiceArea: "" });
+  const [creatingCase, setCreatingCase] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchBookings() {
@@ -66,6 +83,25 @@ export default function LawyerBookingsPage() {
           toast.error(err.response?.data?.error || "Could not join video room");
       } finally {
           setJoiningId(null);
+      }
+  };
+
+  const handleCreateCase = async () => {
+      if (!selectedBookingId) return;
+      setCreatingCase(true);
+      try {
+          const { data } = await api.post("/cases", {
+              bookingId: selectedBookingId,
+              ...caseForm
+          });
+          toast.success("Case created successfully!");
+          setIsCaseModalOpen(false);
+          router.push(`/cases/${data.case.id}`);
+      } catch (error) {
+          console.error(error);
+          toast.error("Failed to create case.");
+      } finally {
+          setCreatingCase(false);
       }
   };
 
@@ -136,12 +172,71 @@ export default function LawyerBookingsPage() {
                                   </Button>
                                 </>
                               )}
+                              {(booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                                  <Button 
+                                     size="sm" 
+                                     variant="secondary"
+                                     onClick={() => {
+                                         setSelectedBookingId(booking.id);
+                                         setIsCaseModalOpen(true);
+                                     }}
+                                  >
+                                      <Briefcase className="w-4 h-4 mr-2" />
+                                      Create Case
+                                  </Button>
+                              )}
                         </div>
                     </div>
                 ))}
              </div>
         )}
       </Card>
+
+      <Dialog open={isCaseModalOpen} onOpenChange={setIsCaseModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Case</DialogTitle>
+            <DialogDescription>
+              Initialize a formal case record for this client engagement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Case Title</Label>
+              <Input
+                id="title"
+                placeholder="e.g. Property Dispute - Sector 4"
+                value={caseForm.title}
+                onChange={(e) => setCaseForm({ ...caseForm, title: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="area">Practice Area</Label>
+              <Input
+                id="area"
+                placeholder="e.g. Civil Litigation"
+                value={caseForm.practiceArea}
+                onChange={(e) => setCaseForm({ ...caseForm, practiceArea: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Initial Notes (Optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Brief summary of the case objectives..."
+                value={caseForm.description}
+                onChange={(e) => setCaseForm({ ...caseForm, description: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsCaseModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateCase} disabled={creatingCase || !caseForm.title || !caseForm.practiceArea}>
+                {creatingCase ? "Creating..." : "Confirm & Create Case"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

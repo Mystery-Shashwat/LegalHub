@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import RaiseDisputeModal from "@/components/RaiseDisputeModal";
+import { AlertTriangle } from "lucide-react";
 
 interface Review {
   id: string;
@@ -46,6 +48,8 @@ export default function ClientBookingConfirmationPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeRaised, setDisputeRaised] = useState(false);
 
   useEffect(() => {
     async function fetchBooking() {
@@ -187,8 +191,47 @@ export default function ClientBookingConfirmationPage() {
               </Button>
             </div>
           )}
+
+          {/* Dispute Action */}
+          {(booking.status === "COMPLETED" || booking.status === "NO_SHOW") && !disputeRaised && (
+            <div className="pt-4 border-t flex flex-col items-center gap-3">
+              <p className="text-xs text-muted-foreground text-center">
+                Having issues with this session? You can raise a formal dispute for our team to investigate.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                onClick={() => setShowDisputeModal(true)}
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Raise Dispute
+              </Button>
+            </div>
+          )}
+
+          {disputeRaised && (
+             <div className="pt-4 border-t text-center">
+                <Badge variant="outline" className="text-amber-600 bg-amber-50">
+                   Dispute Under Review
+                </Badge>
+             </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* ── Dispute Modal ── */}
+      {showDisputeModal && (
+        <RaiseDisputeModal 
+          bookingId={booking.id}
+          lawyerName={booking.lawyer.user.name}
+          onClose={() => setShowDisputeModal(false)}
+          onSuccess={() => {
+            setDisputeRaised(true);
+            setShowDisputeModal(false);
+          }}
+        />
+      )}
 
       {/* ── Review Section ── */}
       {booking.status === "COMPLETED" && (

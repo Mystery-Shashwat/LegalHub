@@ -123,6 +123,7 @@ adminRouter.post("/disputes", requireAuth, async (req: any, res: Response) => {
         const dispute = await prisma.dispute.create({
             data: {
                 userId: req.user.userId,
+                bookingId: bookingId || null,
                 reason,
                 description: description.trim()
             }
