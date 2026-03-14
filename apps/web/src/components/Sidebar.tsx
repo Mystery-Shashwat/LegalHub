@@ -76,6 +76,7 @@ export default function Sidebar({ className, onNavClick }: SidebarProps) {
     { title: "Bookings",   href: "/admin/bookings",   icon: Calendar },
     { title: "Reviews",    href: "/admin/reviews",    icon: FileText },
     { title: "Disputes",   href: "/admin/disputes",   icon: MessageSquare },
+    { title: "RTI",        href: "/admin/rti",        icon: FileText },
     { title: "Payouts",    href: "/admin/payouts",    icon: IndianRupee },
     { title: "Blogs",      href: "/blogs",            icon: FileText },
     { title: "Settings",   href: "/settings",         icon: Settings },

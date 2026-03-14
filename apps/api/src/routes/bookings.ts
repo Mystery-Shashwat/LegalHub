@@ -62,7 +62,7 @@ bookingRouter.post("/", requireClient, async (req: AuthRequest, res: Response) =
         const lawyer = await prisma.lawyerProfile.findUnique({ where: { id: r.data.lawyerProfileId } });
         if (!lawyer) return res.status(404).json({ error: "Lawyer not found" });
 
-        const amount = r.data.durationMinutes * (lawyer.hourlyRate / 60);
+        const amount = parseFloat((r.data.durationMinutes * (lawyer.hourlyRate / 60)).toFixed(2));
 
         const booking = await prisma.booking.create({
             data: {

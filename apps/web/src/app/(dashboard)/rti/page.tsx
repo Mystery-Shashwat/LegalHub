@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -201,7 +202,9 @@ export default function RTIFilingPage() {
                   </p>
                 </CardContent>
                 <CardFooter className="border-t pt-4">
-                  <Button variant="outline" className="w-full">View Details</Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href={`/rti/${app.id}`}>View Details</Link>
+                  </Button>
                 </CardFooter>
               </Card>
             ))}

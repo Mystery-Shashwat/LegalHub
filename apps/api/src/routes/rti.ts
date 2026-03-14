@@ -96,7 +96,22 @@ rtiRouter.get("/template/generate", requireAuth, async (req: AuthRequest, res: R
             if (userRec?.name) userName = userRec.name;
         }
 
-        const template = `To,\nThe Public Information Officer (PIO),\n[Department Name],\n[Govt Address]\n\nSubject: Request for Information under Right to Information Act 2005 regarding ${topic}.\n\nDear Sir/Madam,\n\nI wish to seek information regarding the following queries under the RTI Act, 2005:\n1. \n2. \n3. \n\nI have attached the requisite postal order/fee.\n\nYours faithfully,\n${userName}`;
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(503).json({ error: "AI service is currently unavailable for drafting." });
+        }
+
+        const { GoogleGenerativeAI } = require("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            systemInstruction: "You are an expert Indian Legal Assistant. Draft a formal Right to Information (RTI) application based on the user's topic. Include placeholder brackets like [Department Name] or [Date] where specific facts are needed. Return ONLY the final text of the draft. Do not include markdown formatting or conversational filler."
+        });
+
+        const prompt = `Draft an RTI application requesting information about: "${topic}". The applicant's name is ${userName}. Ensure the format is suitable for Indian government authorities.`;
+        
+        const result = await model.generateContent(prompt);
+        const template = result.response.text();
 
         res.json({ template });
     } catch (error) {
