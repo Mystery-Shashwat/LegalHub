@@ -167,6 +167,44 @@ adminRouter.put("/disputes/:id/resolve", requireAdmin, async (req: Request, res:
     }
 });
 
+// 6a. Get all RTI applications
+adminRouter.get("/rti", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const applications = await prisma.rTIApplication.findMany({
+            include: { applicant: { select: { id: true, name: true, email: true } } },
+            orderBy: { createdAt: "desc" }
+        });
+
+        res.json({ applications });
+    } catch (error) {
+        console.error("Get admin RTIs error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// 6b. Update RTI status
+const updateRTIStatusSchema = z.object({
+    status: z.enum(["SUBMITTED", "IN_PROGRESS", "RESOLVED"])
+});
+
+adminRouter.put("/rti/:id/status", requireAdmin, async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const r = updateRTIStatusSchema.safeParse(req.body);
+        if (!r.success) return res.status(400).json({ errors: r.error.flatten().fieldErrors });
+
+        const application = await prisma.rTIApplication.update({
+            where: { id },
+            data: { status: r.data.status }
+        });
+
+        res.json({ message: "RTI status updated", application });
+    } catch (error) {
+        console.error("Update RTI status error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // 7. Suspend / ban a user
 adminRouter.put("/users/:id/ban", requireAdmin, async (req: any, res: Response) => {
     try {
